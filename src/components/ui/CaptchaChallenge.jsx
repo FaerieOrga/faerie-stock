@@ -47,7 +47,7 @@ const CaptchaChallenge = ({ onVerified, reset }) => {
   // Régénère quand reset change (ex: après soumission)
   useEffect(() => {
     refresh();
-  }, [reset]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [reset]); // eslint-disable-line
 
   const handleChange = (e) => {
     const val = e.target.value;
