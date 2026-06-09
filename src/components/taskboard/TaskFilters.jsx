@@ -96,7 +96,7 @@ const TaskFilters = ({
         ) : (
           <select
             value={viewFilter}
-            onChange={(e) => setViewFilter(e.target.value)}
+            onChange={(e) => setViewFilter(e.target.value === '' ? 'all' : e.target.value)}
             className="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-xl text-[10px] font-black uppercase outline-none shadow-sm cursor-pointer hover:bg-indigo-100 transition-colors"
           >
             {activeTab === 'organizers' && [
@@ -109,12 +109,14 @@ const TaskFilters = ({
                 </option>
               )),
             ]}
-            {activeTab === 'events_view' &&
-              events.map((e) => (
+            {activeTab === 'events_view' && [
+              <option key="all" value="">TOUS LES ÉVÉNEMENTS</option>,
+              ...events.map((e) => (
                 <option key={e.id} value={e.name}>
                   {e.name.toUpperCase()}
                 </option>
-              ))}
+              ))
+            ]}
             {activeTab === 'category_task' &&
               CATEGORIES_LIST.map((cat) => (
                 <option key={cat} value={cat}>

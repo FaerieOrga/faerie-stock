@@ -23,9 +23,9 @@ import {
   CheckCircle,
   Loader2,
   Lock,
+  Users,
 } from 'lucide-react';
 import { supabase } from '../../api/supabase';
-import TransferValidationModal from '../ui/TransferValidationModal';
 
 const EventLogisticsView = ({
   selectedEvent,
@@ -44,7 +44,7 @@ const EventLogisticsView = ({
 
   const [isEventValidated, setIsEventValidated] = useState(false);
   const [isTransferring, setIsTransferring] = useState(false);
-  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [allStaff, setAllStaff] = useState([]);
 
   // États UI
   const [searchInCrateModal, setSearchInCrateModal] = useState('');
@@ -79,6 +79,7 @@ const EventLogisticsView = ({
 
       // Étape B : Charger le reste des données en parallèle
       const [
+        resStaff,
         resEventLocs,
         resGlobalLocs,
         resGlobalCrates,
@@ -87,6 +88,7 @@ const EventLogisticsView = ({
         resEventStatus,
         resOccupiedCrates,
       ] = await Promise.all([
+        supabase.from('staff').select('*').order('name'),
         supabase
           .from('event_locations')
           .select('*')
@@ -118,6 +120,7 @@ const EventLogisticsView = ({
           : Promise.resolve({ data: [] }),
       ]);
 
+      setAllStaff(resStaff.data || []);
       setLocations(resEventLocs.data || []);
       setAllGlobalLieux(resGlobalLocs.data || []);
       setAllGlobalCrates(resGlobalCrates.data || []);
@@ -273,12 +276,13 @@ const EventLogisticsView = ({
     }
   };
 
-  // Ouvre le modal de double validation
-  const confirmGlobalTransfer = () => setShowTransferModal(true);
-
-  // Appelé après double validation réussie
-  const executeGlobalTransfer = async () => {
-    setShowTransferModal(false);
+  const confirmGlobalTransfer = async () => {
+    if (
+      !window.confirm(
+        'Confirmer le transfert global ? Cela verrouillera la logistique.'
+      )
+    )
+      return;
     setIsTransferring(true);
     try {
       const updates = movements.incoming.map((item) => {
@@ -298,6 +302,7 @@ const EventLogisticsView = ({
           .update({ is_logistics_validated: true })
           .eq('id', selectedEvent.id),
       ]);
+      alert('Stock réel mis à jour et logistique verrouillée.');
       await loadAllData();
     } catch (e) {
       console.error(e);
@@ -653,6 +658,16 @@ const EventLogisticsView = ({
             }`}
           >
             <ClipboardList size={14} /> Scénario
+          </button>
+          <button
+            onClick={() => setActiveTab('responsables')}
+            className={`px-6 py-2.5 rounded-xl font-black text-[10px] uppercase flex items-center gap-2 transition-all ${
+              activeTab === 'responsables'
+                ? 'bg-indigo-600 text-white shadow-lg'
+                : 'text-slate-400'
+            }`}
+          >
+            <Users size={14} /> Responsables
           </button>
         </div>
       </div>
@@ -1106,13 +1121,80 @@ const EventLogisticsView = ({
           </div>
         </div>
       )}
-      {showTransferModal && (
-        <TransferValidationModal
-          eventName={selectedEvent?.name}
-          movementsCount={movements.incoming.length}
-          onConfirm={executeGlobalTransfer}
-          onCancel={() => setShowTransferModal(false)}
-        />
+
+      {/* VUE 4 : RESPONSABLES PAR CAISSE */}
+      {activeTab === 'responsables' && (
+        <div className="space-y-6 animate-in fade-in duration-500 text-left">
+          <p className="text-[10px] font-black uppercase text-indigo-500 tracking-widest">
+            Affectez un responsable à chaque caisse de l'événement
+          </p>
+          {crates.length === 0 ? (
+            <div className="bg-white rounded-[2rem] p-12 text-center border-2 border-dashed border-slate-100">
+              <Users className="mx-auto text-slate-200 mb-3" size={40} />
+              <p className="text-slate-400 font-bold text-sm">Aucune caisse configurée</p>
+              <p className="text-xs text-slate-300 mt-1">Ajoutez des caisses dans l'onglet Config.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {crates.map((crate) => {
+                const assignedStaff = allStaff.find((s) => s.id === crate.staff_id);
+                const itemsInCrate = eventItems.filter((i) => i.crate_id === crate.id);
+                return (
+                  <div key={crate.id} className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-all">
+                    <div className={`p-5 border-b flex items-center justify-between ${
+                      assignedStaff ? 'bg-indigo-50 border-indigo-100' : 'bg-slate-50 border-slate-100'
+                    }`}>
+                      <div>
+                        <p className="font-black text-sm uppercase italic text-slate-800">{crate.crate_label}</p>
+                        <p className="text-[10px] font-bold text-slate-400 mt-0.5">{itemsInCrate.length} objet{itemsInCrate.length > 1 ? 's' : ''}</p>
+                      </div>
+                      {assignedStaff && (
+                        <div className="flex items-center gap-2 bg-indigo-600 text-white px-3 py-1.5 rounded-xl">
+                          <Users size={12} />
+                          <span className="text-[10px] font-black">{assignedStaff.name}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <label className="text-[9px] font-black uppercase text-slate-400 block mb-2">Responsable</label>
+                      <select
+                        value={crate.staff_id || ''}
+                        disabled={isEventValidated}
+                        onChange={async (e) => {
+                          const staffId = e.target.value ? parseInt(e.target.value) : null;
+                          await supabase
+                            .from('event_crates')
+                            .update({ staff_id: staffId })
+                            .eq('id', crate.id);
+                          loadAllData();
+                        }}
+                        className="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 font-bold text-sm outline-none focus:border-indigo-500 cursor-pointer"
+                      >
+                        <option value="">— Non assigné —</option>
+                        {allStaff.map((s) => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    {itemsInCrate.length > 0 && (
+                      <div className="px-4 pb-4 space-y-1 border-t border-slate-50 pt-3">
+                        {itemsInCrate.slice(0, 4).map((item) => (
+                          <div key={item.id} className="text-[10px] font-bold text-slate-400 flex items-center gap-1.5 truncate">
+                            <div className="w-1 h-1 rounded-full bg-indigo-200 shrink-0" />
+                            {item.objects?.name}
+                          </div>
+                        ))}
+                        {itemsInCrate.length > 4 && (
+                          <p className="text-[9px] text-slate-300 pl-2.5">+{itemsInCrate.length - 4} autres...</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

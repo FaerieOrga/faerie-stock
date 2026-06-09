@@ -118,27 +118,6 @@ const ListView = ({
 
   return (
     <div className="flex flex-col gap-6 h-full pb-20">
-      {/* FORMULAIRE AJOUT STAFF */}
-      {isAdmin && activeTab === 'organizers' && (
-        <form
-          onSubmit={handleAddStaff}
-          className="flex gap-2 bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm w-fit mx-4"
-        >
-          <input
-            type="text"
-            placeholder="NOM DU RESPONSABLE..."
-            value={newStaffName}
-            onChange={(e) => setNewStaffName(e.target.value)}
-            className="px-4 py-2 bg-slate-50 rounded-xl text-xs font-black outline-none border-2 border-transparent focus:border-indigo-500 uppercase"
-          />
-          <button
-            type="submit"
-            className="bg-indigo-600 text-white px-6 py-2 rounded-xl font-black text-[10px] uppercase shadow-md hover:bg-indigo-700 transition-all"
-          >
-            AJOUTER
-          </button>
-        </form>
-      )}
 
       <div className="space-y-4 px-4">
         {/* VUE RESPONSABLES */}
