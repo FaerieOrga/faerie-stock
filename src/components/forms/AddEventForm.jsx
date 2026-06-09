@@ -4,6 +4,7 @@ import { supabase } from '../../api/supabase';
 
 const AddEventForm = ({ onAdd, onCancel }) => {
   const [templates, setTemplates] = useState([]);
+  const [dateError, setDateError] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     start_date: '',
@@ -26,7 +27,25 @@ const AddEventForm = ({ onAdd, onCancel }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.name) return alert('Le nom est obligatoire');
-    console.log('Envoi du formulaire vers le parent:', formData);
+
+    // Validation des dates si mode logistique
+    if (formData.display_mode === 'logistics' && formData.start_date && formData.end_date) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const start = new Date(formData.start_date);
+      const end = new Date(formData.end_date);
+
+      if (start.getTime() === today.getTime() && end.getTime() === today.getTime()) {
+        setDateError('La date de début et la date de fin ne peuvent pas être toutes les deux égales à aujourd\'hui.');
+        return;
+      }
+      if (end < start) {
+        setDateError('La date de fin ne peut pas être antérieure à la date de début.');
+        return;
+      }
+      setDateError('');
+    }
+
     onAdd(formData);
   };
 
@@ -146,23 +165,43 @@ const AddEventForm = ({ onAdd, onCancel }) => {
 
           {/* DATES (Visible si Logistique) */}
           {formData.display_mode === 'logistics' && (
-            <div className="grid grid-cols-2 gap-4">
-              <input
-                type="date"
-                className="p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-sm"
-                value={formData.start_date}
-                onChange={(e) =>
-                  setFormData({ ...formData, start_date: e.target.value })
-                }
-              />
-              <input
-                type="date"
-                className="p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-sm"
-                value={formData.end_date}
-                onChange={(e) =>
-                  setFormData({ ...formData, end_date: e.target.value })
-                }
-              />
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Début</label>
+                  <input
+                    type="date"
+                    className={`w-full p-4 bg-slate-50 border-2 rounded-2xl font-bold text-sm outline-none ${
+                      dateError ? 'border-red-300 bg-red-50' : 'border-slate-100'
+                    }`}
+                    value={formData.start_date}
+                    onChange={(e) => {
+                      setDateError('');
+                      setFormData({ ...formData, start_date: e.target.value });
+                    }}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Fin</label>
+                  <input
+                    type="date"
+                    className={`w-full p-4 bg-slate-50 border-2 rounded-2xl font-bold text-sm outline-none ${
+                      dateError ? 'border-red-300 bg-red-50' : 'border-slate-100'
+                    }`}
+                    value={formData.end_date}
+                    onChange={(e) => {
+                      setDateError('');
+                      setFormData({ ...formData, end_date: e.target.value });
+                    }}
+                  />
+                </div>
+              </div>
+              {dateError && (
+                <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-2xl px-4 py-3 animate-in slide-in-from-top-1 duration-200">
+                  <span className="text-red-500 shrink-0 mt-0.5">⚠️</span>
+                  <p className="text-xs font-bold text-red-600">{dateError}</p>
+                </div>
+              )}
             </div>
           )}
 

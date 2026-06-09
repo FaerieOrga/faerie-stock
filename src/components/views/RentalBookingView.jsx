@@ -38,6 +38,7 @@ const RentalBookingView = ({
   const endDate = externalDates.end;
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedContactId, setSelectedContactId] = useState('');
   const [contactSearch, setContactSearch] = useState('');
   const [showContactDropdown, setShowContactDropdown] = useState(false);
@@ -105,9 +106,33 @@ const RentalBookingView = ({
     return objectsWithAvailability.filter((obj) => obj.isStrictlyLocked);
   }, [objectsWithAvailability]);
 
-  const displayObjects = objectsWithAvailability.filter((obj) =>
-    obj.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Extraire toutes les catégories disponibles parmi les objets
+  const availableCategories = useMemo(() => {
+    const cats = new Set();
+    objectsWithAvailability.forEach((obj) => {
+      const raw = obj.category;
+      if (!raw) return;
+      const list = Array.isArray(raw) ? raw
+        : typeof raw === 'string' && raw.startsWith('[')
+          ? (() => { try { return JSON.parse(raw); } catch { return [raw]; } })()
+          : [raw];
+      list.forEach((c) => c && cats.add(c));
+    });
+    return [...cats].sort((a, b) => a.localeCompare(b, 'fr'));
+  }, [objectsWithAvailability]);
+
+  const displayObjects = objectsWithAvailability.filter((obj) => {
+    const matchesSearch = obj.name.toLowerCase().includes(searchTerm.toLowerCase());
+    if (!matchesSearch) return false;
+    if (!selectedCategory) return true;
+    const raw = obj.category;
+    if (!raw) return false;
+    const list = Array.isArray(raw) ? raw
+      : typeof raw === 'string' && raw.startsWith('[')
+        ? (() => { try { return JSON.parse(raw); } catch { return [raw]; } })()
+        : [raw];
+    return list.includes(selectedCategory);
+  });
 
   const toggleCart = (obj) => {
     if (!obj.isAvailable) return;
@@ -248,6 +273,34 @@ const RentalBookingView = ({
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
+              {/* FILTRE CATÉGORIE */}
+              {availableCategories.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setSelectedCategory('')}
+                    className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all ${
+                      selectedCategory === ''
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'bg-white border border-slate-200 text-slate-500 hover:border-blue-300'
+                    }`}
+                  >
+                    Tous
+                  </button>
+                  {availableCategories.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setSelectedCategory(cat === selectedCategory ? '' : cat)}
+                      className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all ${
+                        selectedCategory === cat
+                          ? 'bg-blue-600 text-white shadow-md'
+                          : 'bg-white border border-slate-200 text-slate-500 hover:border-blue-300'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
