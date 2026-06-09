@@ -35,8 +35,8 @@ const AddEventForm = ({ onAdd, onCancel }) => {
       const start = new Date(formData.start_date);
       const end = new Date(formData.end_date);
 
-      if (start.getTime() === today.getTime() && end.getTime() === today.getTime()) {
-        setDateError('La date de début et la date de fin ne peuvent pas être toutes les deux égales à aujourd\'hui.');
+      if (end <= today) {
+        setDateError('La date de fin doit être postérieure à aujourd\'hui.');
         return;
       }
       if (end < start) {
