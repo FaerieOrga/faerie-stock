@@ -1124,7 +1124,7 @@ const EventLogisticsView = ({
 
       {/* VUE 4 : RESPONSABLES PAR CAISSE */}
       {activeTab === 'responsables' && (
-        <div className="space-y-6 animate-in fade-in duration-500 text-left">
+        <div className="space-y-8 animate-in fade-in duration-500 text-left">
           <p className="text-[10px] font-black uppercase text-indigo-500 tracking-widest">
             Affectez un responsable à chaque caisse de l'événement
           </p>
@@ -1134,66 +1134,115 @@ const EventLogisticsView = ({
               <p className="text-slate-400 font-bold text-sm">Aucune caisse configurée</p>
               <p className="text-xs text-slate-300 mt-1">Ajoutez des caisses dans l'onglet Config.</p>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {crates.map((crate) => {
-                const assignedStaff = allStaff.find((s) => s.id === crate.staff_id);
-                const itemsInCrate = eventItems.filter((i) => i.crate_id === crate.id);
-                return (
-                  <div key={crate.id} className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-all">
-                    <div className={`p-5 border-b flex items-center justify-between ${
-                      assignedStaff ? 'bg-indigo-50 border-indigo-100' : 'bg-slate-50 border-slate-100'
-                    }`}>
-                      <div>
-                        <p className="font-black text-sm uppercase italic text-slate-800">{crate.crate_label}</p>
-                        <p className="text-[10px] font-bold text-slate-400 mt-0.5">{itemsInCrate.length} objet{itemsInCrate.length > 1 ? 's' : ''}</p>
-                      </div>
-                      {assignedStaff && (
-                        <div className="flex items-center gap-2 bg-indigo-600 text-white px-3 py-1.5 rounded-xl">
-                          <Users size={12} />
-                          <span className="text-[10px] font-black">{assignedStaff.name}</span>
-                        </div>
-                      )}
+          ) : (() => {
+            // Carte caisse réutilisable
+            const CrateCard = ({ crate }) => {
+              const assignedStaff = allStaff.find((s) => Number(s.id) === Number(crate.staff_id));
+              const itemsInCrate = eventItems.filter((i) => i.crate_id === crate.id);
+              return (
+                <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-all">
+                  <div className={`p-5 border-b flex items-center justify-between ${
+                    assignedStaff ? 'bg-indigo-50 border-indigo-100' : 'bg-slate-50 border-slate-100'
+                  }`}>
+                    <div>
+                      <p className="font-black text-sm uppercase italic text-slate-800">{crate.crate_label}</p>
+                      <p className="text-[10px] font-bold text-slate-400 mt-0.5">{itemsInCrate.length} objet{itemsInCrate.length > 1 ? 's' : ''}</p>
                     </div>
-                    <div className="p-4">
-                      <label className="text-[9px] font-black uppercase text-slate-400 block mb-2">Responsable</label>
-                      <select
-                        value={crate.staff_id || ''}
-                        disabled={isEventValidated}
-                        onChange={async (e) => {
-                          const staffId = e.target.value ? parseInt(e.target.value) : null;
-                          await supabase
-                            .from('event_crates')
-                            .update({ staff_id: staffId })
-                            .eq('id', crate.id);
-                          loadAllData();
-                        }}
-                        className="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 font-bold text-sm outline-none focus:border-indigo-500 cursor-pointer"
-                      >
-                        <option value="">— Non assigné —</option>
-                        {allStaff.map((s) => (
-                          <option key={s.id} value={s.id}>{s.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    {itemsInCrate.length > 0 && (
-                      <div className="px-4 pb-4 space-y-1 border-t border-slate-50 pt-3">
-                        {itemsInCrate.slice(0, 4).map((item) => (
-                          <div key={item.id} className="text-[10px] font-bold text-slate-400 flex items-center gap-1.5 truncate">
-                            <div className="w-1 h-1 rounded-full bg-indigo-200 shrink-0" />
-                            {item.objects?.name}
-                          </div>
-                        ))}
-                        {itemsInCrate.length > 4 && (
-                          <p className="text-[9px] text-slate-300 pl-2.5">+{itemsInCrate.length - 4} autres...</p>
-                        )}
+                    {assignedStaff && (
+                      <div className="flex items-center gap-2 bg-indigo-600 text-white px-3 py-1.5 rounded-xl">
+                        <Users size={12} />
+                        <span className="text-[10px] font-black">{assignedStaff.name}</span>
                       </div>
                     )}
                   </div>
-                );
-              })}
-            </div>
-          )}
+                  <div className="p-4">
+                    <label className="text-[9px] font-black uppercase text-slate-400 block mb-2">Responsable</label>
+                    <select
+                      value={crate.staff_id || ''}
+                      disabled={isEventValidated}
+                      onChange={async (e) => {
+                        const staffId = e.target.value ? parseInt(e.target.value) : null;
+                        const { error } = await supabase
+                          .from('event_crates')
+                          .update({ staff_id: staffId })
+                          .eq('id', crate.id);
+                        if (error) { console.error('Erreur update staff_id:', error); return; }
+                        loadAllData();
+                      }}
+                      className="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 font-bold text-sm outline-none focus:border-indigo-500 cursor-pointer"
+                    >
+                      <option value="">— Non assigné —</option>
+                      {allStaff.map((s) => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {itemsInCrate.length > 0 && (
+                    <div className="px-4 pb-4 space-y-1 border-t border-slate-50 pt-3">
+                      {itemsInCrate.slice(0, 4).map((item) => (
+                        <div key={item.id} className="text-[10px] font-bold text-slate-400 flex items-center gap-1.5 truncate">
+                          <div className="w-1 h-1 rounded-full bg-indigo-200 shrink-0" />
+                          {item.objects?.name}
+                        </div>
+                      ))}
+                      {itemsInCrate.length > 4 && (
+                        <p className="text-[9px] text-slate-300 pl-2.5">+{itemsInCrate.length - 4} autres...</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            };
+
+            const unassigned = crates.filter((c) => !c.staff_id);
+            // Grouper les caisses affectées par responsable
+            const staffWithCrates = allStaff
+              .map((s) => ({
+                staff: s,
+                crates: crates.filter((c) => Number(c.staff_id) === Number(s.id)),
+              }))
+              .filter((g) => g.crates.length > 0);
+
+            return (
+              <div className="space-y-8">
+                {/* SECTION NON AFFECTÉS */}
+                {unassigned.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-xl">
+                        <div className="w-2 h-2 rounded-full bg-slate-400" />
+                        <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">
+                          Non affecté — {unassigned.length} caisse{unassigned.length > 1 ? 's' : ''}
+                        </span>
+                      </div>
+                      <div className="flex-1 h-px bg-slate-100" />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {unassigned.map((crate) => <CrateCard key={crate.id} crate={crate} />)}
+                    </div>
+                  </div>
+                )}
+
+                {/* SECTIONS PAR RESPONSABLE */}
+                {staffWithCrates.map(({ staff, crates: staffCrates }) => (
+                  <div key={staff.id} className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 rounded-xl shadow-sm">
+                        <Users size={12} className="text-white" />
+                        <span className="text-[10px] font-black uppercase text-white tracking-widest">
+                          {staff.name} — {staffCrates.length} caisse{staffCrates.length > 1 ? 's' : ''}
+                        </span>
+                      </div>
+                      <div className="flex-1 h-px bg-indigo-100" />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {staffCrates.map((crate) => <CrateCard key={crate.id} crate={crate} />)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
         </div>
       )}
     </div>
