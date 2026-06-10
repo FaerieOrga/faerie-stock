@@ -273,12 +273,12 @@ const RentalBookingView = ({
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              {/* FILTRE CATÉGORIE */}
+              {/* FILTRE CATÉGORIE — scroll horizontal sur mobile */}
               {availableCategories.length > 0 && (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                   <button
                     onClick={() => setSelectedCategory('')}
-                    className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all ${
+                    className={`shrink-0 px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all ${
                       selectedCategory === ''
                         ? 'bg-blue-600 text-white shadow-md'
                         : 'bg-white border border-slate-200 text-slate-500 hover:border-blue-300'
@@ -290,7 +290,7 @@ const RentalBookingView = ({
                     <button
                       key={cat}
                       onClick={() => setSelectedCategory(cat === selectedCategory ? '' : cat)}
-                      className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all ${
+                      className={`shrink-0 px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all ${
                         selectedCategory === cat
                           ? 'bg-blue-600 text-white shadow-md'
                           : 'bg-white border border-slate-200 text-slate-500 hover:border-blue-300'
