@@ -36,7 +36,7 @@ const StockHome = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCrate, setFilterCrate] = useState('');
-  const [filterCategory, setFilterCategory] = useState('');
+  const [filterCategories, setFilterCategories] = useState([]);
   const [sortOrder, setSortOrder] = useState('alpha-asc');
   const [activePicker, setActivePicker] = useState(null);
   const currentUrl = window.location.origin;
@@ -63,7 +63,7 @@ const StockHome = ({
         const matchCrate =
           filterCrate === '' || (obj.crate || '').toString() === filterCrate;
         const matchCategory =
-          filterCategory === '' || objCats.includes(filterCategory);
+          filterCategories.length === 0 || filterCategories.every((c) => objCats.includes(c));
         return matchSearch && matchCrate && matchCategory;
       })
       .sort((a, b) => {
@@ -74,7 +74,7 @@ const StockHome = ({
         if (sortOrder === 'crate') return (a.crate || 0) - (b.crate || 0);
         return 0;
       });
-  }, [objects, searchTerm, filterCrate, filterCategory, sortOrder]);
+  }, [objects, searchTerm, filterCrate, filterCategories, sortOrder]);
 
   const overdueCount = rentals.filter((r) =>
     isRentalOverdue(r.return_date || r.returnDate)
@@ -118,9 +118,9 @@ const StockHome = ({
         {availableCategories.length > 0 && (
           <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
             <button
-              onClick={() => setFilterCategory('')}
+              onClick={() => setFilterCategories([])}
               className={`shrink-0 px-3 py-1 rounded-full text-[9px] font-black uppercase transition-all ${
-                filterCategory === ''
+                filterCategories.length === 0
                   ? 'bg-blue-600 text-white shadow-sm'
                   : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
               }`}
@@ -130,14 +130,16 @@ const StockHome = ({
             {availableCategories.map((cat) => (
               <button
                 key={cat}
-                onClick={() => setFilterCategory(cat === filterCategory ? '' : cat)}
+                onClick={() => setFilterCategories((prev) =>
+                  prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+                )}
                 className={`shrink-0 px-3 py-1 rounded-full text-[9px] font-black uppercase transition-all ${
-                  filterCategory === cat
+                  filterCategories.includes(cat)
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                 }`}
               >
-                {cat}
+                {cat}{filterCategories.includes(cat) && <span className="ml-1 opacity-70">✓</span>}
               </button>
             ))}
           </div>
@@ -284,9 +286,9 @@ const StockHome = ({
                     {cleanArray(obj.category).map((c) => (
                       <span
                         key={c}
-                        onClick={(e) => { e.stopPropagation(); setFilterCategory(c === filterCategory ? '' : c); }}
+                        onClick={(e) => { e.stopPropagation(); setFilterCategories((prev) => prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]); }}
                         className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase cursor-pointer transition-all ${
-                          filterCategory === c
+                          filterCategories.includes(c)
                             ? 'bg-blue-600 text-white'
                             : isRented
                             ? 'bg-orange-200/50 text-orange-700 hover:bg-orange-300/50'

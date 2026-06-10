@@ -131,7 +131,7 @@ const RentalBookingView = ({
       : typeof raw === 'string' && raw.startsWith('[')
         ? (() => { try { return JSON.parse(raw); } catch { return [raw]; } })()
         : [raw];
-    return list.some((c) => selectedCategories.includes(c));
+    return selectedCategories.every((c) => list.includes(c));
   });
 
   const toggleCart = (obj) => {
