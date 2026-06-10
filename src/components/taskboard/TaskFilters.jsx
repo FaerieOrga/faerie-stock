@@ -22,6 +22,7 @@ const TaskFilters = ({
   staff,
   events,
   tasks = [],
+  categories = [],
   isAdmin,
   setShowModal,
   setEditingId,
@@ -117,7 +118,9 @@ const TaskFilters = ({
                 </option>
               ))}
             {activeTab === 'category_task' && (() => {
-              // Extraire toutes les catégories des tâches réelles
+              // Catégories depuis Supabase (source de vérité)
+              const supabaseCats = categories.map((c) => c.name);
+              // Catégories saisies librement dans les tâches (non référencées)
               const taskCats = new Set();
               tasks.forEach((t) => {
                 const cats = Array.isArray(t.categories) ? t.categories
@@ -126,8 +129,8 @@ const TaskFilters = ({
                     : t.categories ? [t.categories] : [];
                 cats.forEach((c) => c && taskCats.add(c));
               });
-              // Fusionner avec la liste statique et trier
-              const allCats = [...new Set([...CATEGORIES_LIST, ...taskCats])]
+              // Fusionner Supabase + tâches (Supabase en priorité)
+              const allCats = [...new Set([...supabaseCats, ...taskCats])]
                 .sort((a, b) => a.localeCompare(b, 'fr'));
               return allCats.map((cat) => (
                 <option key={cat} value={cat}>

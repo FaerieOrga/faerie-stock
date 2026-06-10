@@ -645,7 +645,7 @@ export default function App() {
         )}
 
         {currentView === 'tasks' && (
-          <TaskBoardContainer isAdmin={isAdmin} isGuest={isGuest} />
+          <TaskBoardContainer isAdmin={isAdmin} isGuest={isGuest} categories={categories} />
         )}
       </main>
 

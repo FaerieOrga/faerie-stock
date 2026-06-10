@@ -9,7 +9,7 @@ import ListView from './ListView';
 import TaskModal from './TaskModal';
 import CalendarView from './CalendarView';
 
-const TaskBoardContainer = ({ isAdmin, isGuest }) => {
+const TaskBoardContainer = ({ isAdmin, isGuest, categories = [] }) => {
   // --- ÉTATS DES DONNÉES ---
   const [activeTab, setActiveTab] = useState('tasks');
   const [tasks, setTasks] = useState([]);
@@ -311,6 +311,7 @@ const TaskBoardContainer = ({ isAdmin, isGuest }) => {
           staff={staff}
           events={events}
           tasks={tasks}
+          categories={categories}
           isAdmin={isAdmin}
           setShowModal={setShowModal}
           setEditingId={setEditingId}
