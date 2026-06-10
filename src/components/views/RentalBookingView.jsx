@@ -250,35 +250,37 @@ const RentalBookingView = ({
 
           {/* 2. MATÉRIEL DISPONIBLE */}
           <section ref={searchInputRef}>
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 px-2">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-100">
-                  <Package size={20} strokeWidth={2.5} />
+            <div className="mb-6 px-2 space-y-4">
+              {/* TITRE + RECHERCHE */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-100">
+                    <Package size={20} strokeWidth={2.5} />
+                  </div>
+                  <h2 className="text-xl font-bold text-slate-800 tracking-tight">
+                    2. Matériel disponible
+                  </h2>
                 </div>
-                <h2 className="text-xl font-bold text-slate-800 tracking-tight">
-                  2. Matériel disponible
-                </h2>
+                <div className="relative group">
+                  <Search
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"
+                    size={16}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Rechercher un objet..."
+                    className="pl-11 pr-4 py-3 rounded-2xl bg-white border border-slate-200 text-sm font-bold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all w-full sm:w-64 shadow-sm"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
               </div>
-
-              <div className="relative group">
-                <Search
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"
-                  size={16}
-                />
-                <input
-                  type="text"
-                  placeholder="Rechercher un objet..."
-                  className="pl-11 pr-4 py-3 rounded-2xl bg-white border border-slate-200 text-sm font-bold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all w-full md:w-64 shadow-sm"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              {/* FILTRE CATÉGORIE — scroll horizontal sur mobile */}
+              {/* FILTRE CATÉGORIES — ligne dédiée */}
               {availableCategories.length > 0 && (
-                <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => setSelectedCategory('')}
-                    className={`shrink-0 px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all ${
+                    className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all ${
                       selectedCategory === ''
                         ? 'bg-blue-600 text-white shadow-md'
                         : 'bg-white border border-slate-200 text-slate-500 hover:border-blue-300'
@@ -290,7 +292,7 @@ const RentalBookingView = ({
                     <button
                       key={cat}
                       onClick={() => setSelectedCategory(cat === selectedCategory ? '' : cat)}
-                      className={`shrink-0 px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all ${
+                      className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all ${
                         selectedCategory === cat
                           ? 'bg-blue-600 text-white shadow-md'
                           : 'bg-white border border-slate-200 text-slate-500 hover:border-blue-300'
