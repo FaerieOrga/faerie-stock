@@ -21,6 +21,7 @@ const TaskFilters = ({
   setViewFilter,
   staff,
   events,
+  tasks = [],
   isAdmin,
   setShowModal,
   setEditingId,
@@ -96,7 +97,7 @@ const TaskFilters = ({
         ) : (
           <select
             value={viewFilter}
-            onChange={(e) => setViewFilter(e.target.value === '' ? 'all' : e.target.value)}
+            onChange={(e) => setViewFilter(e.target.value)}
             className="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-xl text-[10px] font-black uppercase outline-none shadow-sm cursor-pointer hover:bg-indigo-100 transition-colors"
           >
             {activeTab === 'organizers' && [
@@ -109,20 +110,31 @@ const TaskFilters = ({
                 </option>
               )),
             ]}
-            {activeTab === 'events_view' && [
-              <option key="all" value="">TOUS LES ÉVÉNEMENTS</option>,
-              ...events.map((e) => (
+            {activeTab === 'events_view' &&
+              events.map((e) => (
                 <option key={e.id} value={e.name}>
                   {e.name.toUpperCase()}
                 </option>
-              ))
-            ]}
-            {activeTab === 'category_task' &&
-              CATEGORIES_LIST.map((cat) => (
+              ))}
+            {activeTab === 'category_task' && (() => {
+              // Extraire toutes les catégories des tâches réelles
+              const taskCats = new Set();
+              tasks.forEach((t) => {
+                const cats = Array.isArray(t.categories) ? t.categories
+                  : typeof t.categories === 'string' && t.categories.startsWith('[')
+                    ? (() => { try { return JSON.parse(t.categories); } catch { return []; } })()
+                    : t.categories ? [t.categories] : [];
+                cats.forEach((c) => c && taskCats.add(c));
+              });
+              // Fusionner avec la liste statique et trier
+              const allCats = [...new Set([...CATEGORIES_LIST, ...taskCats])]
+                .sort((a, b) => a.localeCompare(b, 'fr'));
+              return allCats.map((cat) => (
                 <option key={cat} value={cat}>
                   {cat.toUpperCase()}
                 </option>
-              ))}
+              ));
+            })()}
           </select>
         )}
 

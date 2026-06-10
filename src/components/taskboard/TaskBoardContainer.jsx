@@ -310,6 +310,7 @@ const TaskBoardContainer = ({ isAdmin, isGuest }) => {
           setViewFilter={setViewFilter}
           staff={staff}
           events={events}
+          tasks={tasks}
           isAdmin={isAdmin}
           setShowModal={setShowModal}
           setEditingId={setEditingId}
