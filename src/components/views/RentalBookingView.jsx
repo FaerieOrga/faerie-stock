@@ -38,7 +38,7 @@ const RentalBookingView = ({
   const endDate = externalDates.end;
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedContactId, setSelectedContactId] = useState('');
   const [contactSearch, setContactSearch] = useState('');
   const [showContactDropdown, setShowContactDropdown] = useState(false);
@@ -124,14 +124,14 @@ const RentalBookingView = ({
   const displayObjects = objectsWithAvailability.filter((obj) => {
     const matchesSearch = obj.name.toLowerCase().includes(searchTerm.toLowerCase());
     if (!matchesSearch) return false;
-    if (!selectedCategory) return true;
+    if (selectedCategories.length === 0) return true;
     const raw = obj.category;
     if (!raw) return false;
     const list = Array.isArray(raw) ? raw
       : typeof raw === 'string' && raw.startsWith('[')
         ? (() => { try { return JSON.parse(raw); } catch { return [raw]; } })()
         : [raw];
-    return list.includes(selectedCategory);
+    return list.some((c) => selectedCategories.includes(c));
   });
 
   const toggleCart = (obj) => {
@@ -279,28 +279,36 @@ const RentalBookingView = ({
               {availableCategories.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   <button
-                    onClick={() => setSelectedCategory('')}
+                    onClick={() => setSelectedCategories([])}
                     className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all ${
-                      selectedCategory === ''
+                      selectedCategories.length === 0
                         ? 'bg-blue-600 text-white shadow-md'
                         : 'bg-white border border-slate-200 text-slate-500 hover:border-blue-300'
                     }`}
                   >
                     Tous
                   </button>
-                  {availableCategories.map((cat) => (
-                    <button
-                      key={cat}
-                      onClick={() => setSelectedCategory(cat === selectedCategory ? '' : cat)}
-                      className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all ${
-                        selectedCategory === cat
-                          ? 'bg-blue-600 text-white shadow-md'
-                          : 'bg-white border border-slate-200 text-slate-500 hover:border-blue-300'
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
+                  {availableCategories.map((cat) => {
+                    const isActive = selectedCategories.includes(cat);
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => setSelectedCategories((prev) =>
+                          prev.includes(cat)
+                            ? prev.filter((c) => c !== cat)
+                            : [...prev, cat]
+                        )}
+                        className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all ${
+                          isActive
+                            ? 'bg-blue-600 text-white shadow-md'
+                            : 'bg-white border border-slate-200 text-slate-500 hover:border-blue-300'
+                        }`}
+                      >
+                        {cat}
+                        {isActive && <span className="ml-1 opacity-70">✓</span>}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
