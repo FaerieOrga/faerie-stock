@@ -36,11 +36,18 @@ const StockHome = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCrate, setFilterCrate] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
   const [sortOrder, setSortOrder] = useState('alpha-asc');
   const [activePicker, setActivePicker] = useState(null);
   const currentUrl = window.location.origin;
 
   // --- LOGIQUE DE FILTRAGE ET TRI ---
+  const availableCategories = useMemo(() => {
+    const cats = new Set();
+    objects.forEach((obj) => cleanArray(obj.category).forEach((c) => c && cats.add(c)));
+    return [...cats].sort((a, b) => a.localeCompare(b, 'fr'));
+  }, [objects]);
+
   const filteredObjects = useMemo(() => {
     return objects
       .filter((obj) => {
@@ -55,7 +62,9 @@ const StockHome = ({
           categoryMatch;
         const matchCrate =
           filterCrate === '' || (obj.crate || '').toString() === filterCrate;
-        return matchSearch && matchCrate;
+        const matchCategory =
+          filterCategory === '' || objCats.includes(filterCategory);
+        return matchSearch && matchCrate && matchCategory;
       })
       .sort((a, b) => {
         if (sortOrder === 'alpha-asc')
@@ -65,7 +74,7 @@ const StockHome = ({
         if (sortOrder === 'crate') return (a.crate || 0) - (b.crate || 0);
         return 0;
       });
-  }, [objects, searchTerm, filterCrate, sortOrder]);
+  }, [objects, searchTerm, filterCrate, filterCategory, sortOrder]);
 
   const overdueCount = rentals.filter((r) =>
     isRentalOverdue(r.return_date || r.returnDate)
@@ -104,6 +113,35 @@ const StockHome = ({
             className="w-16 md:w-20 px-2 py-2 rounded-xl bg-slate-100 border-none text-sm text-center font-bold outline-none"
           />
         </div>
+
+        {/* FILTRE CATÉGORIES */}
+        {availableCategories.length > 0 && (
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+            <button
+              onClick={() => setFilterCategory('')}
+              className={`shrink-0 px-3 py-1 rounded-full text-[9px] font-black uppercase transition-all ${
+                filterCategory === ''
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+              }`}
+            >
+              Tous
+            </button>
+            {availableCategories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setFilterCategory(cat === filterCategory ? '' : cat)}
+                className={`shrink-0 px-3 py-1 rounded-full text-[9px] font-black uppercase transition-all ${
+                  filterCategory === cat
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="flex items-center justify-between px-1">
           {isAdmin && (
@@ -243,20 +281,21 @@ const StockHome = ({
                   </div>
 
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {cleanArray(obj.category)
-                      .slice(0, 1)
-                      .map((c) => (
-                        <span
-                          key={c}
-                          className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase truncate max-w-[80px] ${
-                            isRented
-                              ? 'bg-orange-200/50 text-orange-700'
-                              : 'bg-blue-50 text-blue-600'
-                          }`}
-                        >
-                          {c}
-                        </span>
-                      ))}
+                    {cleanArray(obj.category).map((c) => (
+                      <span
+                        key={c}
+                        onClick={(e) => { e.stopPropagation(); setFilterCategory(c === filterCategory ? '' : c); }}
+                        className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase cursor-pointer transition-all ${
+                          filterCategory === c
+                            ? 'bg-blue-600 text-white'
+                            : isRented
+                            ? 'bg-orange-200/50 text-orange-700 hover:bg-orange-300/50'
+                            : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                        }`}
+                      >
+                        {c}
+                      </span>
+                    ))}
                   </div>
                   <div
                     className={`mt-2 text-[10px] md:text-xs font-bold ${
