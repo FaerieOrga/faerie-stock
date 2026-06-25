@@ -1,19 +1,123 @@
 name: Supabase Keep-Alive
-
 on:
   schedule:
-    # Ping quotidien à 8h00 UTC (9h00 heure de Paris)
     - cron: '0 8 * * *'
-  workflow_dispatch: # Permet aussi de lancer manuellement depuis GitHub
-
+  workflow_dispatch:
 jobs:
   keep-alive:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Supabase
+      - name: Simulation navigation utilisateur
         run: |
+          echo "🔐 Ouverture de l'app - chargement des entrepôts..."
           curl -s \
             -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
-            "${{ secrets.SUPABASE_URL }}/rest/v1/warehouses?select=id&limit=1"
-          echo "✅ Ping Supabase envoyé"
+            "${{ secrets.SUPABASE_URL }}/rest/v1/warehouses?select=*&limit=10" > /dev/null
+          sleep 3
+
+          echo "📦 Chargement des objets..."
+          curl -s \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/objects?select=*&limit=20" > /dev/null
+          sleep 2
+
+          echo "🎭 Chargement des objets par événement..."
+          curl -s \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/event_objects?select=*&limit=20" > /dev/null
+          sleep 3
+
+          echo "📍 Chargement des emplacements..."
+          curl -s \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/locations?select=*" > /dev/null
+          sleep 2
+
+          echo "📍 Chargement des emplacements par événement..."
+          curl -s \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/event_locations?select=*&limit=10" > /dev/null
+          sleep 2
+
+          echo "📅 Consultation des événements..."
+          curl -s \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/events?select=*&limit=10" > /dev/null
+          sleep 3
+
+          echo "📋 Chargement des templates d'événement..."
+          curl -s \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/event_templates?select=*" > /dev/null
+          sleep 2
+
+          echo "🧩 Chargement des items de template..."
+          curl -s \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/event_template_items?select=*&limit=20" > /dev/null
+          sleep 2
+
+          echo "🎪 Chargement des caisses par événement..."
+          curl -s \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/event_crates?select=*&limit=20" > /dev/null
+          sleep 3
+
+          echo "📜 Chargement des scénarios..."
+          curl -s \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/event_scenarios_crate?select=*&limit=10" > /dev/null
+          sleep 2
+
+          echo "👥 Chargement du staff..."
+          curl -s \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/staff?select=*" > /dev/null
+          sleep 2
+
+          echo "👤 Chargement des profils..."
+          curl -s \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/profiles?select=*&limit=20" > /dev/null
+          sleep 3
+
+          echo "🔍 Consultation des demandes de location..."
+          curl -s \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/rental_requests?select=*&limit=10" > /dev/null
+          sleep 2
+
+          echo "🏷️ Chargement des articles en location..."
+          curl -s \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/rental_items?select=*&limit=15" > /dev/null
+          sleep 2
+
+          echo "📦 Consultation des demandes de stock..."
+          curl -s \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/stock_requests?select=*&limit=10" > /dev/null
+          sleep 3
+
+          echo "✅ Consultation des tâches..."
+          curl -s \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/tasks?select=*&limit=10" > /dev/null
+
+          echo "✅ Navigation simulée terminée — toutes les tables consultées"
