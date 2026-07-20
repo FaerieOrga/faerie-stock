@@ -157,26 +157,30 @@ const TaskBoardContainer = ({ isAdmin, isGuest, categories = [] }) => {
         if (!request) return false;
 
         if (request.is_new_object) {
-          await supabase.from('objects').insert([
+          const { error: insertError } = await supabase.from('objects').insert([
             {
               name: request.object_name,
               quantity: request.quantity,
-              crate: request.target_crate,
-              category: request.categories,
+              crate: parseInt(request.target_crate) || 0,
+              category: Array.isArray(request.categories)
+                ? request.categories[0]
+                : request.categories,
               state: 'Neuf',
               notes: `Généré via tâche : ${task.title}`,
             },
           ]);
+          if (insertError) throw insertError;
         } else {
           const { data: exObj } = await supabase
             .from('objects')
             .select('quantity')
             .eq('id', request.existing_object_id)
             .single();
-          await supabase
+          const { error: updateError } = await supabase
             .from('objects')
             .update({ quantity: (exObj?.quantity || 0) + request.quantity })
             .eq('id', request.existing_object_id);
+          if (updateError) throw updateError;
         }
         await supabase
           .from('stock_requests')
@@ -187,6 +191,8 @@ const TaskBoardContainer = ({ isAdmin, isGuest, categories = [] }) => {
         return true;
       } catch (err) {
         console.error(err);
+        alert(`❌ Échec de la mise à jour du stock : ${err.message}. La tâche reste en cours.`);
+        return 'ERROR';
       }
     }
 
@@ -202,6 +208,8 @@ const TaskBoardContainer = ({ isAdmin, isGuest, categories = [] }) => {
         return true;
       } catch (err) {
         console.error(err);
+        alert(`❌ Échec de la réparation : ${err.message}. La tâche reste en cours.`);
+        return 'ERROR';
       }
     }
     return false;
@@ -221,8 +229,8 @@ const TaskBoardContainer = ({ isAdmin, isGuest, categories = [] }) => {
       newStatus
     );
 
-    if (automationResult === 'CANCELLED') {
-      // Si annulé, on ne fait rien (la tâche reste dans sa colonne d'origine)
+    if (automationResult === 'CANCELLED' || automationResult === 'ERROR') {
+      // Si annulé ou en échec, on ne fait rien (la tâche reste dans sa colonne d'origine)
       return;
     }
 
@@ -252,8 +260,8 @@ const TaskBoardContainer = ({ isAdmin, isGuest, categories = [] }) => {
           'done'
         );
 
-        if (automationResult === 'CANCELLED') {
-          // Si annulé dans la modale, on ne ferme pas la modale ou on remet l'ancien statut
+        if (automationResult === 'CANCELLED' || automationResult === 'ERROR') {
+          // Si annulé ou en échec, on ne ferme pas la modale ni ne marque la tâche terminée
           return;
         }
 

@@ -16,7 +16,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { supabase } from '../../api/supabase';
-import { CATEGORIES as CATEGORIES_LIST } from '../../utils/constants';
+import CategoryMultiSelect from '../forms/CategoryMultiSelect';
 
 const StockRequestView = ({
   objects,
@@ -173,15 +173,6 @@ const StockRequestView = ({
     }
   };
 
-  const toggleCategory = (cat) => {
-    setFormData((prev) => ({
-      ...prev,
-      categories: prev.categories.includes(cat)
-        ? prev.categories.filter((c) => c !== cat)
-        : [...prev.categories, cat],
-    }));
-  };
-
   // --- RENDER : FORMULAIRE ---
   if (showForm) {
     return (
@@ -263,7 +254,8 @@ const StockRequestView = ({
               />
               <input
                 type="number"
-                placeholder="Caisse cible (optionnel)"
+                min="0"
+                placeholder="Caisse cible (optionnel, vide = Vrac)"
                 className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none focus:border-blue-500"
                 value={formData.target_crate || ''}
                 onChange={(e) =>
@@ -287,22 +279,12 @@ const StockRequestView = ({
             <label className="text-[10px] font-black uppercase text-slate-400 ml-1">
               Catégories
             </label>
-            <div className="flex flex-wrap gap-2 p-4 bg-slate-50 rounded-2xl border-2 border-slate-100">
-              {CATEGORIES_LIST.map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => toggleCategory(cat)}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${
-                    formData.categories.includes(cat)
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : 'bg-white text-slate-400 border border-slate-200'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
+            <CategoryMultiSelect
+              selected={formData.categories}
+              onChange={(cats) =>
+                setFormData({ ...formData, categories: cats })
+              }
+            />
           </div>
           <div className="p-4 bg-indigo-50 rounded-3xl space-y-3 border border-indigo-100">
             <label className="flex items-center gap-3 cursor-pointer">
