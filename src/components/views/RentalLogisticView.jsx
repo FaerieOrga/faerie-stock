@@ -64,6 +64,50 @@ const RentalLogisticsView = ({
     setItemAssignments(newAssignments);
   };
 
+  // Prépare un mail de récapitulatif (mailto) à l'emprunteur
+  const openRecapMail = (req) => {
+    const contact = contacts.find((c) => c.id === req.contact_id);
+    if (!contact?.email) {
+      alert(
+        "Location validée. Aucune adresse e-mail sur la fiche : récapitulatif non préparé."
+      );
+      return;
+    }
+    const fmt = (d) => {
+      const dt = new Date(d);
+      return isNaN(dt) ? d : dt.toLocaleDateString('fr-FR');
+    };
+    const lines = (req.rental_items || []).map((item) => {
+      const obj = objects.find((o) => Number(o.id) === Number(item.object_id));
+      const qty = Number(item.quantity) > 1 ? ` x${item.quantity}` : '';
+      const crate = itemAssignments[item.object_id];
+      return `- ${obj?.name || `Objet #${item.object_id}`}${qty}${
+        crate ? ` (caisse ${crate})` : ''
+      }`;
+    });
+    const body = [
+      `Bonjour ${contact.first_name || ''},`,
+      '',
+      'Votre location est confirmée. Voici le récapitulatif :',
+      '',
+      `Du ${fmt(req.start_date)} au ${fmt(req.end_date)}`,
+      '',
+      `Matériel (${lines.length} article${lines.length > 1 ? 's' : ''}) :`,
+      ...lines,
+      ...(req.notes ? ['', `Votre note : ${req.notes}`] : []),
+      '',
+      'Merci de prendre soin du matériel et de le rapporter à la date prévue.',
+      '',
+      'Cordialement,',
+    ].join('\n');
+    const subject = `Récapitulatif de votre location du ${fmt(
+      req.start_date
+    )} au ${fmt(req.end_date)}`;
+    window.location.href = `mailto:${contact.email}?subject=${encodeURIComponent(
+      subject
+    )}&body=${encodeURIComponent(body)}`;
+  };
+
   const confirmAction = async (reqId) => {
     const currentReq = rentalRequests.find((r) => r.id === reqId);
     const missingCrate = currentReq.rental_items.some(
@@ -84,7 +128,8 @@ const RentalLogisticsView = ({
       }));
 
       if (activeTab === 'pending') {
-        await onApprove(reqId, updates);
+        const result = await onApprove(reqId, updates);
+        if (result?.success) openRecapMail(currentReq);
       } else {
         await onReturn(reqId, updates);
       }
