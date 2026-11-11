@@ -18,19 +18,22 @@ export const checkObjectAvailability = (
   startDate,
   endDate,
   rentalRequests,
-  events
+  events,
+  totalQuantity = 1
 ) => {
   if (!startDate || !endDate) return true;
 
   // 1. Vérifier les locations approuvées (statut 'approved')
-  const hasRentalConflict = rentalRequests?.some((req) => {
+  // Quantité déjà réservée (approuvée / en cours) sur la période
+  let reservedQty = 0;
+  rentalRequests?.forEach((req) => {
     // On ignore les demandes rejetées ou déjà retournées
     if (
       req.status === 'rejected' ||
       req.status === 'returned' ||
       req.status === 'pending'
     )
-      return false;
+      return;
 
     const overlap = isOverlapping(
       startDate,
@@ -38,14 +41,15 @@ export const checkObjectAvailability = (
       req.start_date,
       req.end_date
     );
-    const containsObject = req.rental_items?.some(
-      (item) => Number(item.object_id) === Number(objectId)
-    );
-
-    return overlap && containsObject;
+    if (!overlap) return;
+    req.rental_items?.forEach((item) => {
+      if (Number(item.object_id) === Number(objectId)) {
+        reservedQty += Number(item.quantity) || 1;
+      }
+    });
   });
 
-  if (hasRentalConflict) return false;
+  if (reservedQty >= (Number(totalQuantity) || 1)) return false;
 
   // 2. Vérifier les conflits avec les événements
   const hasEventConflict = events?.some((ev) => {
@@ -64,3 +68,29 @@ export const checkObjectAvailability = (
 
   return !hasEventConflict;
 };
+
+/**
+ * Quantité d'un objet actuellement louée (demandes dans les statuts donnés)
+ */
+export const getRentedQuantity = (
+  objectId,
+  rentals = [],
+  statuses = ['approved', 'ongoing']
+) => {
+  let total = 0;
+  rentals?.forEach((r) => {
+    if (!statuses.includes(r.status)) return;
+    r.rental_items?.forEach((item) => {
+      if (Number(item.object_id) === Number(objectId)) {
+        total += Number(item.quantity) || 1;
+      }
+    });
+  });
+  return total;
+};
+
+/** Libellé du badge : "LOUÉ" ou "LOUÉ 3/10" si l'objet a plusieurs unités */
+export const rentedLabel = (rentedQty, totalQty) =>
+  Number(totalQty) > 1
+    ? `LOUÉ ${Math.min(rentedQty, totalQty)}/${totalQty}`
+    : 'LOUÉ';

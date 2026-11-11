@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import {
   Camera,
   Save,
-  Minus,
-  PlusCircle,
   FileText,
   Box,
   Warehouse,
@@ -206,35 +204,23 @@ const AddObjectForm = ({
               Unités disponibles
             </span>
           </div>
-          <div className="flex items-center gap-6 bg-slate-50 p-2 rounded-2xl">
-            <button
-              type="button"
-              onClick={() =>
-                setNewObject((prev) => ({
-                  ...prev,
-                  quantity: Math.max(1, prev.quantity - 1),
-                }))
-              }
-              className="w-10 h-10 flex items-center justify-center bg-white rounded-xl text-slate-600 shadow-sm active:scale-90 transition-all"
-            >
-              <Minus size={20} strokeWidth={3} />
-            </button>
-            <span className="text-2xl font-black w-8 text-center text-slate-800">
-              {newObject.quantity}
-            </span>
-            <button
-              type="button"
-              onClick={() =>
-                setNewObject((prev) => ({
-                  ...prev,
-                  quantity: prev.quantity + 1,
-                }))
-              }
-              className="w-10 h-10 flex items-center justify-center bg-blue-600 rounded-xl text-white shadow-lg shadow-blue-200 active:scale-90 transition-all"
-            >
-              <PlusCircle size={20} strokeWidth={2} />
-            </button>
-          </div>
+          <input
+            type="number"
+            inputMode="numeric"
+            min="1"
+            value={newObject.quantity}
+            onFocus={(e) => e.target.select()}
+            onChange={(e) =>
+              setNewObject((prev) => ({ ...prev, quantity: e.target.value }))
+            }
+            onBlur={() =>
+              setNewObject((prev) => ({
+                ...prev,
+                quantity: Math.max(1, parseInt(prev.quantity) || 1),
+              }))
+            }
+            className="w-24 p-3 bg-slate-50 rounded-2xl text-center text-2xl font-black text-slate-800 border-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
 
         {/* CATÉGORIES */}

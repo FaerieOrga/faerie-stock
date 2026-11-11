@@ -289,6 +289,17 @@ const RentalLogisticsView = ({
                       </div>
                     )}
 
+                    {req.notes && (
+                      <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-left">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-1">
+                          Note de l'emprunteur
+                        </p>
+                        <p className="text-sm font-medium text-slate-700 whitespace-pre-wrap">
+                          {req.notes}
+                        </p>
+                      </div>
+                    )}
+
                     <div className="space-y-3 mb-8">
                       {req.rental_items?.map((item) => {
                         const obj = objects.find(
@@ -317,6 +328,11 @@ const RentalLogisticsView = ({
                               <div>
                                 <p className="font-bold text-slate-700 text-sm">
                                   {obj?.name || `ID: ${item.object_id}`}
+                                  {item.quantity > 1 && (
+                                    <span className="ml-2 text-blue-600 font-black">
+                                      ×{item.quantity}
+                                    </span>
+                                  )}
                                 </p>
                                 <p className="text-[10px] text-slate-400 font-bold uppercase">
                                   Caisse actuelle: {obj?.crate || '??'}

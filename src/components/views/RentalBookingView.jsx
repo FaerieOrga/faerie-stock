@@ -44,6 +44,7 @@ const RentalBookingView = ({
   const [showContactDropdown, setShowContactDropdown] = useState(false);
   const contactSearchRef = useRef(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [notes, setNotes] = useState('');
   const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
   const [captchaReset, setCaptchaReset] = useState(0);
   const [viewingObject, setViewingObject] = useState(null);
@@ -83,18 +84,34 @@ const RentalBookingView = ({
   const objectsWithAvailability = useMemo(() => {
     const baseAvailability = getAvailableObjects(startDate, endDate);
     return baseAvailability.map((obj) => {
-      const activeRequest = rentals.find(
-        (req) =>
-          (req.status === 'pending' || req.status === 'approved') &&
-          req.rental_items?.some(
-            (item) => Number(item.object_id) === Number(obj.id)
+      let reserved = 0;
+      let activeRequest = null;
+      rentals.forEach((req) => {
+        if (!['pending', 'approved', 'ongoing'].includes(req.status)) return;
+        if (
+          startDate &&
+          endDate &&
+          !(
+            new Date(startDate) <= new Date(req.end_date) &&
+            new Date(endDate) >= new Date(req.start_date)
           )
-      );
+        )
+          return;
+        req.rental_items?.forEach((item) => {
+          if (Number(item.object_id) === Number(obj.id)) {
+            reserved += Number(item.quantity) || 1;
+            activeRequest = activeRequest || req;
+          }
+        });
+      });
+      const totalQty = Number(obj.quantity) || 1;
+      const availableQty = Math.max(0, totalQty - reserved);
 
       return {
         ...obj,
-        isAvailable: obj.isAvailable && !activeRequest,
-        isStrictlyLocked: !!activeRequest,
+        availableQty,
+        isAvailable: obj.isAvailable && availableQty > 0,
+        isStrictlyLocked: availableQty <= 0 && !!activeRequest,
         currentRenter: activeRequest
           ? contacts.find((c) => c.id === activeRequest.contact_id)
           : null,
@@ -152,10 +169,22 @@ const RentalBookingView = ({
         contact_id: selectedContactId,
         start_date: startDate,
         end_date: endDate,
-        items: cart.map((i) => i.id),
+        items: cart.map((i) => ({
+          object_id: i.id,
+          quantity: Math.max(
+            1,
+            Math.min(
+              Number(i.rentQty) || 1,
+              objectsWithAvailability.find((o) => o.id === i.id)
+                ?.availableQty ?? 1
+            )
+          ),
+        })),
+        notes: notes.trim(),
       });
       alert('Demande de location envoyée avec succès !');
       setExternalCart([]);
+      setNotes('');
       setCaptchaReset((n) => n + 1);
       setIsCaptchaVerified(false);
       onBack();
@@ -358,6 +387,11 @@ const RentalBookingView = ({
                         >
                           {obj.isAvailable ? 'Libre' : 'Indisponible'}
                         </span>
+                        {obj.quantity > 1 && (
+                          <span className="ml-2 text-[9px] font-black uppercase text-slate-400">
+                            {obj.availableQty}/{obj.quantity} dispo
+                          </span>
+                        )}
                       </div>
 
                       {inCart && (
@@ -455,9 +489,52 @@ const RentalBookingView = ({
                   key={item.id}
                   className="flex items-center justify-between bg-white/5 p-4 rounded-[1.5rem] border border-white/10 group hover:bg-white/10 transition-all"
                 >
-                  <span className="text-sm font-bold truncate pr-4 text-slate-200">
+                  <span className="text-sm font-bold truncate pr-4 text-slate-200 flex-1">
                     {item.name}
                   </span>
+                  {(() => {
+                    const max =
+                      objectsWithAvailability.find((o) => o.id === item.id)
+                        ?.availableQty ?? 1;
+                    if (max <= 1) return null;
+                    return (
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min="1"
+                        max={max}
+                        value={item.rentQty ?? 1}
+                        onFocus={(e) => e.target.select()}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) =>
+                          setExternalCart(
+                            cart.map((c) =>
+                              c.id === item.id
+                                ? { ...c, rentQty: e.target.value }
+                                : c
+                            )
+                          )
+                        }
+                        onBlur={() =>
+                          setExternalCart(
+                            cart.map((c) =>
+                              c.id === item.id
+                                ? {
+                                    ...c,
+                                    rentQty: Math.min(
+                                      max,
+                                      Math.max(1, parseInt(c.rentQty) || 1)
+                                    ),
+                                  }
+                                : c
+                            )
+                          )
+                        }
+                        title={`Max ${max}`}
+                        className="w-16 mr-2 p-2 rounded-xl bg-white/10 text-center font-black text-white outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    );
+                  })()}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -597,6 +674,20 @@ const RentalBookingView = ({
                 >
                   <UserPlus size={14} /> Fiche absente ?
                 </button>
+              </div>
+
+              <div className="text-left">
+                <label className="text-[10px] font-black uppercase tracking-widest text-white/50 ml-1">
+                  Note (optionnelle)
+                </label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={3}
+                  maxLength={1000}
+                  placeholder="Précisions, horaires de récupération, besoins particuliers..."
+                  className="mt-2 w-full p-4 rounded-2xl bg-white/5 border border-white/10 text-sm font-medium text-white placeholder:text-white/30 outline-none focus:border-blue-500 resize-none"
+                />
               </div>
 
               {isGuest && (

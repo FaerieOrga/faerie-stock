@@ -4,8 +4,6 @@ import {
   Camera,
   Trash2,
   Calendar,
-  Minus,
-  Plus,
   FileText,
   QrCode,
   Warehouse,
@@ -15,6 +13,30 @@ import {
 } from 'lucide-react';
 import DisplayImage from '../ui/DisplayImage';
 import PhotoPicker from '../ui/PhotoPicker';
+
+function QuantityInput({ value, onCommit }) {
+  const [text, setText] = React.useState(String(value ?? 0));
+  React.useEffect(() => setText(String(value ?? 0)), [value]);
+  const commit = () => {
+    const q = Math.max(0, parseInt(text));
+    if (Number.isNaN(q)) return setText(String(value ?? 0));
+    setText(String(q));
+    if (q !== value) onCommit(q);
+  };
+  return (
+    <input
+      type="number"
+      inputMode="numeric"
+      min="0"
+      value={text}
+      onFocus={(e) => e.target.select()}
+      onChange={(e) => setText(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => e.key === 'Enter' && e.target.blur()}
+      className="w-24 p-2 bg-slate-50 rounded-xl text-center font-black text-xl outline-none focus:ring-2 focus:ring-blue-500"
+    />
+  );
+}
 import CategoryMultiSelect from '../forms/CategoryMultiSelect';
 import { ITEM_STATES } from '../../utils/constants';
 import { supabase } from '../../api/supabase';
@@ -254,29 +276,10 @@ const ObjectDetail = ({
                 <span className="text-slate-400 font-bold uppercase text-xs">
                   Quantité
                 </span>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() =>
-                      onUpdate(object.id, {
-                        quantity: Math.max(0, object.quantity - 1),
-                      })
-                    }
-                    className="p-2 bg-red-50 text-red-500 rounded-lg"
-                  >
-                    <Minus size={18} />
-                  </button>
-                  <span className="w-8 text-center font-black text-xl">
-                    {object.quantity}
-                  </span>
-                  <button
-                    onClick={() =>
-                      onUpdate(object.id, { quantity: object.quantity + 1 })
-                    }
-                    className="p-2 bg-green-50 text-green-500 rounded-lg"
-                  >
-                    <Plus size={18} />
-                  </button>
-                </div>
+                <QuantityInput
+                  value={object.quantity}
+                  onCommit={(q) => onUpdate(object.id, { quantity: q })}
+                />
               </div>
 
               <div className="flex items-center justify-between px-2">

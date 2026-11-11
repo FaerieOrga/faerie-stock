@@ -26,10 +26,52 @@ const CategoryView = ({
   setCurrentView, // Ajouté : pour la redirection
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState([]);
+
+  const getCatList = (obj) => {
+    let rawCats = obj.category || 'Autre';
+    if (typeof rawCats === 'string' && rawCats.startsWith('[')) {
+      try {
+        rawCats = JSON.parse(rawCats);
+      } catch (e) {
+        rawCats = [rawCats];
+      }
+    }
+    return (Array.isArray(rawCats) ? rawCats : [rawCats]).map((c) =>
+      typeof c === 'string' ? c : 'Autre'
+    );
+  };
+
+  const availableCategories = useMemo(() => {
+    const set = new Set();
+    objects.forEach((o) => getCatList(o).forEach((c) => c && set.add(c)));
+    return [...set].sort();
+  }, [objects]);
+
+  const toggleCategory = (cat) =>
+    setSelectedCategories((prev) =>
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+    );
 
   // --- LOGIQUE DE GROUPEMENT AVEC ÉCLATEMENT ET FILTRE ---
   const categoriesGrouped = useMemo(() => {
     const search = searchTerm.toLowerCase();
+
+    // Filtre multi-catégories (intersection) : un seul groupe regroupé
+    if (selectedCategories.length > 0) {
+      const items = objects.filter((obj) => {
+        const list = getCatList(obj);
+        return (
+          selectedCategories.every((c) => list.includes(c)) &&
+          (obj.name?.toLowerCase().includes(search) ||
+            list.some((c) => c.toLowerCase().includes(search)) ||
+            obj.crate?.toString().includes(search))
+        );
+      });
+      return items.length > 0
+        ? [{ name: selectedCategories.join(' + '), items }]
+        : [];
+    }
 
     const groups = objects.reduce((acc, obj) => {
       // 1. Extraction propre des catégories
@@ -66,7 +108,7 @@ const CategoryView = ({
         name,
         items: groups[name],
       }));
-  }, [objects, searchTerm]);
+  }, [objects, searchTerm, selectedCategories]);
 
   return (
     <div className="max-w-3xl mx-auto w-full pb-24 relative">
@@ -113,6 +155,38 @@ const CategoryView = ({
             className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-100 border-none focus:ring-2 focus:ring-purple-500 text-sm font-medium transition-all"
           />
         </div>
+
+        {availableCategories.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-3">
+            <button
+              onClick={() => setSelectedCategories([])}
+              className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all ${
+                selectedCategories.length === 0
+                  ? 'bg-purple-600 text-white shadow-md'
+                  : 'bg-white border border-slate-200 text-slate-500 hover:border-purple-300'
+              }`}
+            >
+              Toutes
+            </button>
+            {availableCategories.map((cat) => {
+              const isActive = selectedCategories.includes(cat);
+              return (
+                <button
+                  key={cat}
+                  onClick={() => toggleCategory(cat)}
+                  className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all ${
+                    isActive
+                      ? 'bg-purple-600 text-white shadow-md'
+                      : 'bg-white border border-slate-200 text-slate-500 hover:border-purple-300'
+                  }`}
+                >
+                  {cat}
+                  {isActive && <span className="ml-1 opacity-70">✓</span>}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="p-4 space-y-6">

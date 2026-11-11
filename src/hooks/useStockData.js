@@ -97,7 +97,8 @@ export function useStockData(isAuthenticated) {
         startDate,
         endDate,
         rentalRequests,
-        events
+        events,
+        obj.quantity
       ),
     }));
   };
@@ -117,6 +118,7 @@ export function useStockData(isAuthenticated) {
             start_date: requestData.start_date,
             end_date: requestData.end_date,
             status: 'pending',
+            ...(requestData.notes ? { notes: requestData.notes } : {}),
           },
         ])
         .select()
@@ -134,6 +136,7 @@ export function useStockData(isAuthenticated) {
         request_id: request.id,
         // On extrait l'id que l'objet soit déjà un objet {object_id: X} ou juste un ID X
         object_id: parseInt(item.object_id || item),
+        ...(item.quantity > 1 ? { quantity: item.quantity } : {}),
       }));
 
       // 3. Insertion des items

@@ -14,8 +14,11 @@ import {
   Loader2,
   Warehouse,
   ShoppingCart,
+  ChevronDown,
+  ChevronsUpDown,
 } from 'lucide-react';
 import DisplayImage from '../ui/DisplayImage';
+import { getRentedQuantity, rentedLabel } from '../../utils/availability';
 import { supabase } from '../../api/supabase';
 
 const CrateView = ({
@@ -40,6 +43,13 @@ const CrateView = ({
   const [crateSortOrder, setCrateSortOrder] = useState('asc');
   const [selectedWarehouseId, setSelectedWarehouseId] = useState('ALL');
   const [uploadingCrate, setUploadingCrate] = useState(null);
+  const [expandedKeys, setExpandedKeys] = useState(() => new Set());
+  const toggleExpanded = (key) =>
+    setExpandedKeys((prev) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
   const currentUrl = window.location.origin;
 
   // --- LOGIQUE DE FILTRAGE DES CAISSES (CORRIGÉE) ---
@@ -191,6 +201,25 @@ const CrateView = ({
             <option value="asc">N° 1-9</option>
             <option value="desc">N° 9-1</option>
           </select>
+
+          <button
+            type="button"
+            onClick={() =>
+              setExpandedKeys((prev) =>
+                prev.size > 0
+                  ? new Set()
+                  : new Set(
+                      filteredCrateNums.map((n) =>
+                        n === 0 ? 'vrac-section' : `crate-${n}`
+                      )
+                    )
+              )
+            }
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 text-xs font-black text-slate-600 uppercase"
+          >
+            <ChevronsUpDown size={16} />
+            {expandedKeys.size > 0 ? 'Tout replier' : 'Tout déplier'}
+          </button>
         </div>
       </div>
 
@@ -250,9 +279,12 @@ const CrateView = ({
             crateObjects.length > 0 &&
             crateObjects.every((obj) => selectedIds.includes(obj.id));
 
+          const crateKey = isVracGroup ? 'vrac-section' : `crate-${crateNum}`;
+          const isExpanded = search !== '' || expandedKeys.has(crateKey);
+
           return (
             <div
-              key={isVracGroup ? 'vrac-section' : `crate-${crateNum}`}
+              key={crateKey}
               className={`bg-white rounded-[2rem] shadow-sm border overflow-hidden flex flex-col md:flex-row transition-all hover:shadow-md ${
                 isCrateRented
                   ? 'border-orange-400 ring-2 ring-orange-400/10'
@@ -339,7 +371,22 @@ const CrateView = ({
                     )}
                   </div>
 
-                  <div className="md:hidden ml-4">
+                  <button
+                    type="button"
+                    onClick={() => toggleExpanded(crateKey)}
+                    className="ml-2 p-2.5 bg-white rounded-xl shadow-sm text-slate-500 flex items-center gap-1.5 text-xs font-black no-print"
+                    aria-expanded={isExpanded}
+                  >
+                    {crateObjects.length}
+                    <ChevronDown
+                      size={18}
+                      className={`transition-transform ${
+                        isExpanded ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+
+                  <div className="md:hidden ml-2">
                     {!isVracGroup && (
                       <button
                         onClick={(e) =>
@@ -354,7 +401,11 @@ const CrateView = ({
                 </div>
 
                 {/* OBJETS (ORIGINAL) */}
-                <div className="p-3 space-y-1.5 flex-1">
+                <div
+                  className={`p-3 space-y-1.5 flex-1 ${
+                    isExpanded ? '' : 'hidden print:block'
+                  }`}
+                >
                   <div className="flex justify-end px-2 mb-1 no-print">
                     {isAdmin && (
                       <button
@@ -376,6 +427,8 @@ const CrateView = ({
                           (item) => Number(item.object_id) === Number(obj.id)
                         )
                     );
+
+                    const rentedQty = getRentedQuantity(obj.id, rentals);
 
                     return (
                       <div
@@ -419,7 +472,7 @@ const CrateView = ({
                             {obj.name}
                             {isObjRented && (
                               <span className="ml-2 text-[7px] text-orange-500 uppercase font-black">
-                                LOUÉ
+                                {rentedLabel(rentedQty, obj.quantity)}
                               </span>
                             )}
                           </div>

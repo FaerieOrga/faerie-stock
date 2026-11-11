@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import DisplayImage from '../ui/DisplayImage';
 import { cleanArray, isRentalOverdue } from '../../utils/formatters';
+import { getRentedQuantity, rentedLabel } from '../../utils/availability';
 
 const StockHome = ({
   objects,
@@ -210,6 +211,11 @@ const StockHome = ({
               )
           );
           const isRented = !!activeRental;
+          const rentedQty = getRentedQuantity(obj.id, rentals, [
+            'approved',
+            'ongoing',
+            'pending',
+          ]);
 
           return (
             <div
@@ -268,7 +274,7 @@ const StockHome = ({
                     {isRented && (
                       <div className="flex items-center gap-1.5">
                         <span className="text-[7px] md:text-[8px] font-black px-1.5 py-0.5 bg-orange-500 text-white rounded uppercase tracking-wider animate-pulse">
-                          LOUÉ
+                          {rentedLabel(rentedQty, obj.quantity)}
                         </span>
                         {activeRental.return_date && (
                           <span className="text-[7px] md:text-[8px] font-bold text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded border border-orange-200">
