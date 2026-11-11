@@ -10,6 +10,7 @@ import {
   Check,
 } from 'lucide-react';
 import DisplayImage from '../ui/DisplayImage';
+import PhotoPicker from '../ui/PhotoPicker';
 
 const CrateDetail = ({
   crateInfo,
@@ -100,20 +101,18 @@ const CrateDetail = ({
               />
             </div>
 
-            <label className="absolute bottom-6 right-6 bg-blue-600 text-white p-4 rounded-2xl shadow-2xl cursor-pointer hover:bg-blue-700 active:scale-95 transition-all z-10 border-4 border-white">
+            <PhotoPicker
+              onChange={handlePhotoUpload}
+              disabled={isUploading}
+              className="absolute bottom-6 right-6 z-10"
+              buttonClassName="bg-blue-600 text-white p-4 rounded-2xl shadow-2xl hover:bg-blue-700 active:scale-95 transition-all border-4 border-white"
+            >
               {isUploading ? (
                 <Loader2 size={24} className="animate-spin" />
               ) : (
                 <Camera size={24} />
               )}
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handlePhotoUpload}
-                disabled={isUploading}
-              />
-            </label>
+            </PhotoPicker>
           </div>
 
           <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 flex items-center justify-between no-print">

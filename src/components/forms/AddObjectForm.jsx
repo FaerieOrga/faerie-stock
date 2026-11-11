@@ -10,6 +10,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import DisplayImage from '../ui/DisplayImage';
+import PhotoPicker from '../ui/PhotoPicker';
 import CategoryMultiSelect from './CategoryMultiSelect';
 import { ITEM_STATES } from '../../utils/constants';
 
@@ -85,20 +86,14 @@ const AddObjectForm = ({
               className="h-40 w-40 mx-auto shadow-2xl ring-4 ring-slate-50 rounded-[28px] object-cover"
               size="text-6xl"
             />
-            <label
-              className={`absolute -bottom-2 -right-2 bg-blue-600 text-white p-3 rounded-2xl shadow-xl cursor-pointer hover:scale-110 active:scale-90 transition-all ${
+            <PhotoPicker
+              onChange={handleImageChange}
+              disabled={uploading}
+              className="absolute -bottom-2 -right-2"
+              buttonClassName={`bg-blue-600 text-white p-3 rounded-2xl shadow-xl hover:scale-110 active:scale-90 transition-all ${
                 uploading ? 'opacity-50 animate-pulse' : ''
               }`}
-            >
-              <Camera size={20} />
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleImageChange}
-                disabled={uploading}
-              />
-            </label>
+            />
           </div>
           <p className="mt-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
             Identité Visuelle

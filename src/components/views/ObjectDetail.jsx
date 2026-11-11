@@ -14,6 +14,7 @@ import {
   X,
 } from 'lucide-react';
 import DisplayImage from '../ui/DisplayImage';
+import PhotoPicker from '../ui/PhotoPicker';
 import CategoryMultiSelect from '../forms/CategoryMultiSelect';
 import { ITEM_STATES } from '../../utils/constants';
 import { supabase } from '../../api/supabase';
@@ -183,26 +184,24 @@ const ObjectDetail = ({
                 size="text-7xl"
               />
               {!isGuest && (
-                <label className="absolute bottom-3 right-3 bg-blue-600 text-white p-3 rounded-2xl shadow-lg cursor-pointer hover:scale-105 transition-transform">
+                <PhotoPicker
+                  disabled={uploading}
+                  className="absolute bottom-3 right-3"
+                  buttonClassName="bg-blue-600 text-white p-3 rounded-2xl shadow-lg hover:scale-105 transition-transform"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file)
+                      onUploadImage(file).then((url) =>
+                        onUpdate(object.id, { photo: url })
+                      );
+                  }}
+                >
                   {uploading ? (
                     <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
                   ) : (
                     <Camera size={20} />
                   )}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files[0];
-                      if (file)
-                        onUploadImage(file).then((url) =>
-                          onUpdate(object.id, { photo: url })
-                        );
-                    }}
-                    disabled={uploading}
-                  />
-                </label>
+                </PhotoPicker>
               )}
             </div>
 
