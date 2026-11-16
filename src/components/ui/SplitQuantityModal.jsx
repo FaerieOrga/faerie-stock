@@ -44,10 +44,24 @@ const SplitQuantityModal = ({ object, rentals = [], onClose, onDone }) => {
     return null;
   }, [rows, parsed, sum, total, reserved]);
 
-  const setRow = (i, field, value) =>
-    setRows((prev) =>
-      prev.map((r, idx) => (idx === i ? { ...r, [field]: value } : r))
+  // La caisse mère (ligne 0) reçoit automatiquement le reste :
+  // total moins les quantités saisies sur les autres lignes.
+  const withMotherRest = (list) => {
+    const others = list
+      .slice(1)
+      .reduce((acc, r) => acc + (parseInt(r.qty, 10) || 0), 0);
+    return list.map((r, idx) =>
+      idx === 0 ? { ...r, qty: String(Math.max(0, total - others)) } : r
     );
+  };
+
+  const setRow = (i, field, value) =>
+    setRows((prev) => {
+      const next = prev.map((r, idx) =>
+        idx === i ? { ...r, [field]: value } : r
+      );
+      return field === 'qty' && i > 0 ? withMotherRest(next) : next;
+    });
 
   const handleConfirm = async () => {
     if (error) return;
@@ -115,15 +129,15 @@ const SplitQuantityModal = ({ object, rentals = [], onClose, onDone }) => {
           Chaque ligne en plus crée une fiche séparée.
         </p>
 
-        <div className="grid grid-cols-[1fr_1fr_40px] gap-2 mb-2 text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">
-          <span>Caisse</span>
-          <span>Quantité</span>
-          <span />
+        <div className="flex gap-2 mb-2 text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">
+          <span className="flex-1 min-w-0">Caisse</span>
+          <span className="flex-1 min-w-0">Quantité</span>
+          <span className="w-10 shrink-0" />
         </div>
 
         <div className="space-y-2">
           {rows.map((r, i) => (
-            <div key={i} className="grid grid-cols-[1fr_1fr_40px] gap-2">
+            <div key={i} className="flex gap-2">
               <input
                 type="number"
                 inputMode="numeric"
@@ -132,7 +146,7 @@ const SplitQuantityModal = ({ object, rentals = [], onClose, onDone }) => {
                 placeholder="N°"
                 onFocus={(e) => e.target.select()}
                 onChange={(e) => setRow(i, 'crate', e.target.value)}
-                className="p-3 bg-slate-50 rounded-xl text-center font-black outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 min-w-0 w-full p-3 bg-slate-50 rounded-xl text-center font-black outline-none focus:ring-2 focus:ring-blue-500"
               />
               <input
                 type="number"
@@ -142,11 +156,11 @@ const SplitQuantityModal = ({ object, rentals = [], onClose, onDone }) => {
                 placeholder="Qté"
                 onFocus={(e) => e.target.select()}
                 onChange={(e) => setRow(i, 'qty', e.target.value)}
-                className="p-3 bg-slate-50 rounded-xl text-center font-black outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 min-w-0 w-full p-3 bg-slate-50 rounded-xl text-center font-black outline-none focus:ring-2 focus:ring-blue-500"
               />
               {i === 0 ? (
                 <span
-                  className="flex items-center justify-center text-[9px] font-black uppercase text-slate-300"
+                  className="w-10 shrink-0 flex items-center justify-center text-[9px] font-black uppercase text-slate-300"
                   title="Fiche d'origine"
                 >
                   Orig.
@@ -154,9 +168,11 @@ const SplitQuantityModal = ({ object, rentals = [], onClose, onDone }) => {
               ) : (
                 <button
                   onClick={() =>
-                    setRows((prev) => prev.filter((_, idx) => idx !== i))
+                    setRows((prev) =>
+                      withMotherRest(prev.filter((_, idx) => idx !== i))
+                    )
                   }
-                  className="flex items-center justify-center text-slate-300 hover:text-red-500 rounded-xl"
+                  className="w-10 shrink-0 flex items-center justify-center text-slate-300 hover:text-red-500 rounded-xl"
                 >
                   <Trash2 size={18} />
                 </button>
