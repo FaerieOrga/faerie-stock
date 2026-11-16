@@ -83,19 +83,22 @@ const RentalBookingView = ({
   }, [startDate, endDate, selectedContactId, cart, isGuest, isCaptchaVerified]);
 
   // Disponibilité fiche par fiche
+  // Sans dates choisies, on regarde la disponibilité du jour
+  const today = new Date().toISOString().slice(0, 10);
+  const refStart = startDate || endDate || today;
+  const refEnd = endDate || startDate || today;
+
   const fichesWithAvailability = useMemo(() => {
-    const baseAvailability = getAvailableObjects(startDate, endDate);
+    const baseAvailability = getAvailableObjects(refStart, refEnd);
     return baseAvailability.map((obj) => {
       let reserved = 0;
       let activeRequest = null;
       rentals.forEach((req) => {
         if (!['pending', 'approved', 'ongoing'].includes(req.status)) return;
         if (
-          startDate &&
-          endDate &&
           !(
-            new Date(startDate) <= new Date(req.end_date) &&
-            new Date(endDate) >= new Date(req.start_date)
+            new Date(refStart) <= new Date(req.end_date) &&
+            new Date(refEnd) >= new Date(req.start_date)
           )
         )
           return;
@@ -119,7 +122,7 @@ const RentalBookingView = ({
           : null,
       };
     });
-  }, [startDate, endDate, objects, rentals, contacts, getAvailableObjects]);
+  }, [refStart, refEnd, objects, rentals, contacts, getAvailableObjects]);
 
   // Regroupement des fiches identiques (objet réparti sur plusieurs caisses) :
   // une seule carte par objet, avec les quantités additionnées.
@@ -215,6 +218,18 @@ const RentalBookingView = ({
 
   const handleFinalSubmit = async () => {
     if (!isFormValid) return;
+    const blocked = cart.filter((i) => {
+      const g = objectsWithAvailability.find((o) => o.id === i.id);
+      return !g || !g.isAvailable;
+    });
+    if (blocked.length > 0) {
+      alert(
+        `Indisponible sur ces dates : ${blocked
+          .map((b) => b.name)
+          .join(', ')}. Retirez-les du panier ou changez les dates.`
+      );
+      return;
+    }
     setIsSubmitting(true);
     try {
       await onSubmitRequest({
@@ -229,7 +244,7 @@ const RentalBookingView = ({
             Math.min(Number(i.rentQty) || 1, group.availableQty ?? 1)
           );
           const lines = allocate(group, wanted);
-          return lines.length > 0 ? lines : [{ object_id: i.id, quantity: 1 }];
+          return lines;
         }),
         notes: notes.trim(),
       });

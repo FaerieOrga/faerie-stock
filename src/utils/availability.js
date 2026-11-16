@@ -53,11 +53,13 @@ export const checkObjectAvailability = (
 
   // 2. Vérifier les conflits avec les événements
   const hasEventConflict = events?.some((ev) => {
+    // Un événement sans date (mode kanban) ne bloque rien ; sans date de fin, il dure un jour
+    if (!ev.start_date) return false;
     const overlap = isOverlapping(
       startDate,
       endDate,
       ev.start_date,
-      ev.end_date
+      ev.end_date || ev.start_date
     );
     const containsObject = ev.items?.some(
       (item) => Number(item.id) === Number(objectId)

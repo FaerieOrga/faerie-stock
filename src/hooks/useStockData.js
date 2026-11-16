@@ -27,6 +27,7 @@ export function useStockData(isAuthenticated) {
         { data: cats },
         { data: w },
         { data: ctcts },
+        { data: evObjs },
       ] = await Promise.all([
         supabase.from('objects').select('*'),
         supabase
@@ -38,12 +39,22 @@ export function useStockData(isAuthenticated) {
         supabase.from('categories').select('*').order('name'),
         supabase.from('warehouses').select('*').order('name'),
         supabase.from('contacts').select('*').order('last_name'),
+        supabase.from('event_objects').select('event_id, object_id'),
       ]);
 
       if (o) setObjects(o);
       if (reqs) setRentalRequests(reqs);
       if (c) setCratesInfo(c);
-      if (ev) setEvents(ev);
+      if (ev)
+        setEvents(
+          ev.map((e) => ({
+            ...e,
+            // Objets affectés à l'événement, au format attendu par la disponibilité
+            items: (evObjs || [])
+              .filter((eo) => eo.event_id === e.id)
+              .map((eo) => ({ id: eo.object_id })),
+          }))
+        );
       if (cats) setCategories(cats);
       if (w) setWarehouses(w);
       if (ctcts) setContacts(ctcts);
