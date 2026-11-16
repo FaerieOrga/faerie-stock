@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import DisplayImage from '../ui/DisplayImage';
 import CaptchaChallenge from '../ui/CaptchaChallenge';
+import { sameObjectKey } from '../ui/MergeDuplicatesModal';
 
 const RentalBookingView = ({
   objects = [],
@@ -81,7 +82,8 @@ const RentalBookingView = ({
     );
   }, [startDate, endDate, selectedContactId, cart, isGuest, isCaptchaVerified]);
 
-  const objectsWithAvailability = useMemo(() => {
+  // Disponibilité fiche par fiche
+  const fichesWithAvailability = useMemo(() => {
     const baseAvailability = getAvailableObjects(startDate, endDate);
     return baseAvailability.map((obj) => {
       let reserved = 0;
@@ -118,6 +120,56 @@ const RentalBookingView = ({
       };
     });
   }, [startDate, endDate, objects, rentals, contacts, getAvailableObjects]);
+
+  // Regroupement des fiches identiques (objet réparti sur plusieurs caisses) :
+  // une seule carte par objet, avec les quantités additionnées.
+  const objectsWithAvailability = useMemo(() => {
+    const groups = new Map();
+    fichesWithAvailability.forEach((f) => {
+      const key = sameObjectKey(f);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(f);
+    });
+    return [...groups.values()].map((members) => {
+      const sorted = [...members].sort((a, b) => Number(a.id) - Number(b.id));
+      const rep = sorted[0];
+      const usable = (m) => (m.isAvailable ? m.availableQty : 0);
+      const availableQty = sorted.reduce((acc, m) => acc + usable(m), 0);
+      const withPhoto = sorted.find(
+        (m) => m.photo && !String(m.photo).startsWith('icon:')
+      );
+      const locked = sorted.find((m) => m.isStrictlyLocked);
+      return {
+        ...rep,
+        photo: withPhoto ? withPhoto.photo : rep.photo,
+        members: sorted,
+        quantity: sorted.reduce(
+          (acc, m) => acc + (Number(m.quantity) || 1),
+          0
+        ),
+        availableQty,
+        isAvailable: availableQty > 0,
+        isStrictlyLocked: availableQty <= 0 && !!locked,
+        currentRenter: locked ? locked.currentRenter : null,
+      };
+    });
+  }, [fichesWithAvailability]);
+
+  // Répartit une quantité demandée sur les fiches du groupe (les plus disponibles d'abord)
+  const allocate = (group, wanted) => {
+    const lines = [];
+    let rest = wanted;
+    [...(group.members || [group])]
+      .filter((m) => m.isAvailable && m.availableQty > 0)
+      .sort((a, b) => b.availableQty - a.availableQty)
+      .forEach((m) => {
+        if (rest <= 0) return;
+        const q = Math.min(rest, m.availableQty);
+        lines.push({ object_id: m.id, quantity: q });
+        rest -= q;
+      });
+    return lines;
+  };
 
   const itemsCurrentlyOut = useMemo(() => {
     return objectsWithAvailability.filter((obj) => obj.isStrictlyLocked);
@@ -169,17 +221,16 @@ const RentalBookingView = ({
         contact_id: selectedContactId,
         start_date: startDate,
         end_date: endDate,
-        items: cart.map((i) => ({
-          object_id: i.id,
-          quantity: Math.max(
+        items: cart.flatMap((i) => {
+          const group =
+            objectsWithAvailability.find((o) => o.id === i.id) || i;
+          const wanted = Math.max(
             1,
-            Math.min(
-              Number(i.rentQty) || 1,
-              objectsWithAvailability.find((o) => o.id === i.id)
-                ?.availableQty ?? 1
-            )
-          ),
-        })),
+            Math.min(Number(i.rentQty) || 1, group.availableQty ?? 1)
+          );
+          const lines = allocate(group, wanted);
+          return lines.length > 0 ? lines : [{ object_id: i.id, quantity: 1 }];
+        }),
         notes: notes.trim(),
       });
       alert('Demande de location envoyée avec succès !');
