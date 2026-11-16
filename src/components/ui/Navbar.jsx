@@ -226,6 +226,11 @@ const Navbar = ({
                       className={`${baseTextClass} flex items-center gap-2 font-bold py-2 uppercase text-[10px] tracking-widest`}
                     >
                       <ClipboardList size={14} /> Logistique{' '}
+                      {pendingCount > 0 && (
+                        <span className="bg-red-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full">
+                          {pendingCount}
+                        </span>
+                      )}
                       <ChevronDown size={10} />
                     </button>
                     <div className="absolute top-full left-0 w-48 bg-white rounded-xl shadow-2xl border border-slate-100 py-2 hidden group-hover:block">
@@ -359,6 +364,11 @@ const Navbar = ({
                   size={24}
                   className={isWhiteHeader ? 'text-slate-600' : 'text-white'}
                 />
+                {!isGuest && pendingCount > 0 && (
+                  <span className="absolute top-0 right-0 bg-red-500 text-white text-[9px] font-black min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center">
+                    {pendingCount}
+                  </span>
+                )}
               </button>
             </div>
           </div>
@@ -418,8 +428,13 @@ const Navbar = ({
                     ))}
                   </div>
                   <div>
-                    <p className="px-4 text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                    <p className="px-4 text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
                       Opérations
+                      {pendingCount > 0 && (
+                        <span className="bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full tracking-normal">
+                          {pendingCount}
+                        </span>
+                      )}
                     </p>
                     {logisticsItems.map((item) => (
                       <button
