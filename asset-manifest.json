@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.js": "/faerie-stock/static/js/main.d6afcccb.js",
+    "main.js": "/faerie-stock/static/js/main.01b7d47e.js",
     "index.html": "/faerie-stock/index.html",
-    "main.d6afcccb.js.map": "/faerie-stock/static/js/main.d6afcccb.js.map"
+    "main.01b7d47e.js.map": "/faerie-stock/static/js/main.01b7d47e.js.map"
   },
   "entrypoints": [
-    "static/js/main.d6afcccb.js"
+    "static/js/main.01b7d47e.js"
   ]
 }
