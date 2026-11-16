@@ -13,6 +13,7 @@ import {
   Zap,
   History,
   User,
+  Mail,
 } from 'lucide-react';
 
 const RentalLogisticsView = ({
@@ -65,7 +66,8 @@ const RentalLogisticsView = ({
   };
 
   // Prépare un mail de récapitulatif (mailto) à l'emprunteur
-  const openRecapMail = (req) => {
+  // fromStock = true : caisse lue sur l'objet (cas du renvoi depuis l'onglet Retours)
+  const openRecapMail = (req, fromStock = false) => {
     const contact = contacts.find((c) => c.id === req.contact_id);
     if (!contact?.email) {
       alert(
@@ -80,7 +82,7 @@ const RentalLogisticsView = ({
     const lines = (req.rental_items || []).map((item) => {
       const obj = objects.find((o) => Number(o.id) === Number(item.object_id));
       const qty = Number(item.quantity) > 1 ? ` x${item.quantity}` : '';
-      const crate = itemAssignments[item.object_id];
+      const crate = fromStock ? obj?.crate : itemAssignments[item.object_id];
       return `- ${obj?.name || `Objet #${item.object_id}`}${qty}${
         crate ? ` (caisse ${crate})` : ''
       }`;
@@ -436,6 +438,15 @@ const RentalLogisticsView = ({
                               </>
                             )}
                           </button>
+                          {activeTab === 'active' && (
+                            <button
+                              onClick={() => openRecapMail(req, true)}
+                              title="Renvoyer le mail de récapitulatif"
+                              className="px-5 bg-white text-blue-600 border-2 border-blue-100 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-blue-50 transition-all flex items-center justify-center gap-2"
+                            >
+                              <Mail size={18} /> Récap
+                            </button>
+                          )}
                           {activeTab === 'pending' && (
                             <button
                               onClick={() => onReject(req.id)}
