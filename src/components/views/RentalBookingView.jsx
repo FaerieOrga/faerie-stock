@@ -52,8 +52,21 @@ const RentalBookingView = ({
 
   // États pour le bouton flottant
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [cartInView, setCartInView] = useState(false);
   const searchInputRef = useRef(null);
   const cartSectionRef = useRef(null);
+
+  // Barre panier mobile masquée quand le panier est déjà à l'écran
+  useEffect(() => {
+    const el = cartSectionRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setCartInView(entry.isIntersecting),
+      { threshold: 0.15 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   // Détection du scroll pour changer l'icône du bouton
   useEffect(() => {
@@ -262,31 +275,40 @@ const RentalBookingView = ({
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-4 pb-24 text-left animate-in fade-in duration-500 relative">
-      {/* RACCOURCI FLOTTANT MOBILE */}
-      <div className="lg:hidden fixed bottom-6 right-6 z-[100] flex flex-col gap-3">
+    <div className="max-w-6xl mx-auto p-4 pb-28 text-left animate-in fade-in duration-500 relative">
+      {/* RACCOURCIS MOBILE : remonter + barre panier */}
+      {showScrollButton && (
         <button
-          onClick={() =>
-            showScrollButton
-              ? window.scrollTo({ top: 0, behavior: 'smooth' })
-              : scrollToSection(cartSectionRef)
-          }
-          className="w-14 h-14 bg-slate-900 text-white rounded-2xl shadow-2xl flex items-center justify-center transition-all active:scale-90 border border-white/10"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className={`lg:hidden fixed right-4 z-[100] w-12 h-12 bg-white text-slate-700 rounded-2xl shadow-xl border border-slate-200 flex items-center justify-center active:scale-90 ${
+            cartInView ? 'bottom-6' : 'bottom-24'
+          }`}
+          title="Remonter"
         >
-          {showScrollButton ? (
-            <ArrowUp size={24} />
-          ) : (
-            <div className="relative">
-              <ShoppingCart size={24} />
+          <ArrowUp size={22} />
+        </button>
+      )}
+      {!cartInView && (
+        <button
+          onClick={() => scrollToSection(cartSectionRef)}
+          className="lg:hidden fixed bottom-4 left-4 right-4 z-[100] bg-slate-900 text-white rounded-2xl shadow-2xl px-5 py-4 flex items-center justify-between active:scale-[0.98] border border-white/10"
+        >
+          <span className="flex items-center gap-3 font-black uppercase tracking-widest text-xs">
+            <span className="relative">
+              <ShoppingCart size={22} />
               {cart.length > 0 && (
                 <span className="absolute -top-2 -right-2 bg-blue-600 text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-slate-900">
                   {cart.length}
                 </span>
               )}
-            </div>
-          )}
+            </span>
+            Votre panier
+          </span>
+          <span className="text-[11px] font-black uppercase tracking-widest text-blue-300">
+            {cart.length === 0 ? 'Vide' : 'Valider →'}
+          </span>
         </button>
-      </div>
+      )}
 
       {/* HEADER PRINCIPAL */}
       <div className="text-center mb-12">

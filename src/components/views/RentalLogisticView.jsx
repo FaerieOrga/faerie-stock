@@ -497,9 +497,9 @@ const RentalLogisticsView = ({
                         return (
                           <div
                             key={item.id}
-                            className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-sm group"
+                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm group"
                           >
-                            <div className="flex items-center gap-3 text-left">
+                            <div className="flex items-center gap-3 text-left min-w-0">
                               <div className="h-14 w-14 rounded-xl overflow-hidden bg-slate-100 border border-slate-100 flex items-center justify-center shrink-0">
                                 {obj?.photo && !obj.photo.includes('icon:') ? (
                                   <img
@@ -514,8 +514,8 @@ const RentalLogisticsView = ({
                                   />
                                 )}
                               </div>
-                              <div>
-                                <p className="font-bold text-slate-700 text-sm">
+                              <div className="min-w-0">
+                                <p className="font-bold text-slate-700 text-sm break-words">
                                   {obj?.name || `ID: ${item.object_id}`}
                                   {item.quantity > 1 && (
                                     <span className="ml-2 text-blue-600 font-black">
@@ -534,7 +534,7 @@ const RentalLogisticsView = ({
                             </div>
 
                             {activeTab !== 'history' && (
-                              <div className="flex items-center gap-3">
+                              <div className="flex items-center justify-end gap-3 shrink-0">
                                 <span className="text-[10px] font-black text-slate-300 uppercase">
                                   Caisse :
                                 </span>
@@ -560,13 +560,13 @@ const RentalLogisticsView = ({
                       })}
                     </div>
 
-                    <div className="flex gap-3">
+                    <div className="flex flex-wrap gap-3">
                       {activeTab !== 'history' ? (
                         <>
                           <button
                             onClick={() => confirmAction(req.id)}
                             disabled={isProcessing}
-                            className={`flex-1 py-4 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg ${
+                            className={`basis-full sm:basis-0 flex-1 py-4 px-4 rounded-2xl font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2 transition-all shadow-lg ${
                               activeTab === 'pending'
                                 ? 'bg-green-500 text-white hover:bg-green-600 shadow-green-100'
                                 : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-100'
@@ -596,7 +596,7 @@ const RentalLogisticsView = ({
                           {activeTab === 'pending' && (
                             <button
                               onClick={() => handleReject(req)}
-                              className="flex-1 bg-white text-red-500 border-2 border-red-50 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-red-50 transition-all"
+                              className="flex-1 bg-white text-red-500 border-2 border-red-100 py-4 px-4 rounded-2xl font-black uppercase tracking-widest text-sm hover:bg-red-50 transition-all"
                             >
                               Rejeter
                             </button>
@@ -610,7 +610,7 @@ const RentalLogisticsView = ({
 
                       <button
                         onClick={() => setSelectedRequestId(null)}
-                        className="px-8 bg-slate-200 text-slate-500 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px]"
+                        className="flex-1 sm:flex-none px-8 bg-slate-200 text-slate-500 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px]"
                       >
                         Fermer
                       </button>
