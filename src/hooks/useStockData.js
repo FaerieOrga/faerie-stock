@@ -147,7 +147,8 @@ export function useStockData(isAuthenticated) {
         request_id: request.id,
         // On extrait l'id que l'objet soit déjà un objet {object_id: X} ou juste un ID X
         object_id: parseInt(item.object_id || item),
-        ...(item.quantity > 1 ? { quantity: item.quantity } : {}),
+        // Toujours envoyé : dans un insert multiple, une colonne absente d'une ligne devient NULL
+        quantity: Math.max(1, parseInt(item.quantity, 10) || 1),
       }));
 
       // 3. Insertion des items
