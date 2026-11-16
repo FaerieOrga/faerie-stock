@@ -552,13 +552,17 @@ export default function App() {
             onApprove={approveRentalRequest}
             onReturn={returnRentalRequest}
             onReject={async (id) => {
-              if (window.confirm('Rejeter cette demande ?')) {
-                await supabase
-                  .from('rental_requests')
-                  .update({ status: 'rejected' })
-                  .eq('id', id);
-                fetchData();
+              if (!window.confirm('Rejeter cette demande ?')) return false;
+              const { error } = await supabase
+                .from('rental_requests')
+                .update({ status: 'rejected' })
+                .eq('id', id);
+              if (error) {
+                alert(`Erreur lors du rejet : ${error.message}`);
+                return false;
               }
+              fetchData();
+              return true;
             }}
           />
         )}

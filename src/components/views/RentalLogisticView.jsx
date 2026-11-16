@@ -110,6 +110,58 @@ const RentalLogisticsView = ({
     )}&body=${encodeURIComponent(body)}`;
   };
 
+  // Mail (mailto) prévenant l'emprunteur que sa demande est refusée
+  const openRejectMail = (req, reason) => {
+    const contact = contacts.find((c) => c.id === req.contact_id);
+    if (!contact?.email) {
+      alert(
+        'Demande rejetée. Aucune adresse e-mail sur la fiche : mail non préparé.'
+      );
+      return;
+    }
+    const fmt = (d) => {
+      const dt = new Date(d);
+      return isNaN(dt) ? d : dt.toLocaleDateString('fr-FR');
+    };
+    const lines = (req.rental_items || []).map((item) => {
+      const obj = objects.find((o) => Number(o.id) === Number(item.object_id));
+      const qty = Number(item.quantity) > 1 ? ` x${item.quantity}` : '';
+      return `- ${obj?.name || `Objet #${item.object_id}`}${qty}`;
+    });
+    const body = [
+      `Bonjour ${contact.first_name || ''},`,
+      '',
+      `Nous sommes désolés : votre demande de location du ${fmt(
+        req.start_date
+      )} au ${fmt(req.end_date)} ne peut pas être acceptée.`,
+      ...(reason ? ['', `Motif : ${reason}`] : []),
+      '',
+      'Matériel demandé :',
+      ...lines,
+      '',
+      "N'hésitez pas à refaire une demande sur d'autres dates ou à nous contacter.",
+      '',
+      'Cordialement,',
+    ].join('\n');
+    const subject = `Votre demande de location du ${fmt(
+      req.start_date
+    )} au ${fmt(req.end_date)}`;
+    window.location.href = `mailto:${contact.email}?subject=${encodeURIComponent(
+      subject
+    )}&body=${encodeURIComponent(body)}`;
+  };
+
+  const handleReject = async (req) => {
+    const ok = await onReject(req.id);
+    if (!ok) return;
+    setSelectedRequestId(null);
+    const reason = window.prompt(
+      'Motif du refus à indiquer dans le mail (optionnel) :',
+      ''
+    );
+    openRejectMail(req, reason ? reason.trim() : '');
+  };
+
   const confirmAction = async (reqId) => {
     const currentReq = rentalRequests.find((r) => r.id === reqId);
     const missingCrate = currentReq.rental_items.some(
@@ -449,7 +501,7 @@ const RentalLogisticsView = ({
                           )}
                           {activeTab === 'pending' && (
                             <button
-                              onClick={() => onReject(req.id)}
+                              onClick={() => handleReject(req)}
                               className="flex-1 bg-white text-red-500 border-2 border-red-50 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-red-50 transition-all"
                             >
                               Rejeter
