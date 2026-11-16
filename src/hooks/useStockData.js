@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../api/supabase';
 import { compressImage } from '../utils/formatters';
 import { checkObjectAvailability } from '../utils/availability';
+import { logCrateMoves } from '../utils/crateHistory';
 
 export function useStockData(isAuthenticated) {
   const [objects, setObjects] = useState([]);
@@ -178,12 +179,26 @@ export function useStockData(isAuthenticated) {
   const returnRentalRequest = async (requestId, itemsToReturn) => {
     setLoading(true);
     try {
+      const moves = [];
       for (const item of itemsToReturn) {
-        await supabase
+        const toCrate = parseInt(item.return_crate) || 0;
+        const current = objects.find(
+          (o) => Number(o.id) === Number(item.object_id)
+        );
+        const { error } = await supabase
           .from('objects')
-          .update({ crate: parseInt(item.return_crate) })
+          .update({ crate: toCrate })
           .eq('id', item.object_id);
+        if (error) throw error;
+        moves.push({
+          object_id: item.object_id,
+          from_crate: current?.crate ?? 0,
+          to_crate: toCrate,
+          reason: 'Retour de location',
+          rental_request_id: requestId,
+        });
       }
+      await logCrateMoves(moves);
 
       const { error: updateError } = await supabase
         .from('rental_requests')
@@ -206,12 +221,36 @@ export function useStockData(isAuthenticated) {
   const approveRentalRequest = async (requestId, itemUpdates) => {
     setLoading(true);
     try {
+      const moves = [];
       for (const update of itemUpdates) {
-        await supabase
+        const current = objects.find(
+          (o) => Number(o.id) === Number(update.object_id)
+        );
+        const sourceCrate = current?.crate ?? 0;
+        const { error: moveError } = await supabase
           .from('objects')
           .update({ crate: update.target_crate })
           .eq('id', update.object_id);
+        if (moveError) throw moveError;
+
+        // Mémorise la caisse d'origine pour proposer le retour à la caisse source
+        const { error: srcError } = await supabase
+          .from('rental_items')
+          .update({ source_crate: sourceCrate })
+          .eq('request_id', requestId)
+          .eq('object_id', update.object_id);
+        if (srcError)
+          console.warn('Caisse source non enregistrée :', srcError.message);
+
+        moves.push({
+          object_id: update.object_id,
+          from_crate: sourceCrate,
+          to_crate: update.target_crate,
+          reason: 'Départ en location',
+          rental_request_id: requestId,
+        });
       }
+      await logCrateMoves(moves);
 
       const { error } = await supabase
         .from('rental_requests')
@@ -258,8 +297,19 @@ export function useStockData(isAuthenticated) {
 
   const updateObject = async (id, ups) => {
     try {
+      const before = objects.find((o) => Number(o.id) === Number(id));
       const { error } = await supabase.from('objects').update(ups).eq('id', id);
       if (error) throw error;
+      if (ups.crate !== undefined && before) {
+        logCrateMoves([
+          {
+            object_id: id,
+            from_crate: before.crate ?? 0,
+            to_crate: ups.crate,
+            reason: 'Modification manuelle',
+          },
+        ]);
+      }
       setObjects((prev) =>
         prev.map((obj) => (obj.id === id ? { ...obj, ...ups } : obj))
       );
@@ -272,12 +322,26 @@ export function useStockData(isAuthenticated) {
 
   const bulkUpdateObjects = async (ids, field, value) => {
     try {
+      const before = objects.filter((o) =>
+        ids.map(Number).includes(Number(o.id))
+      );
       const { data, error } = await supabase
         .from('objects')
         .update({ [field]: value })
         .in('id', ids); // Utilise .in() pour mettre à jour une liste d'IDs
 
       if (error) throw error;
+
+      if (field === 'crate') {
+        await logCrateMoves(
+          before.map((o) => ({
+            object_id: o.id,
+            from_crate: o.crate ?? 0,
+            to_crate: value,
+            reason: 'Déplacement groupé',
+          }))
+        );
+      }
 
       // On rafraîchit les données locales après modification
       await fetchData();

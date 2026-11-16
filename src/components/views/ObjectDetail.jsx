@@ -14,6 +14,7 @@ import {
 import DisplayImage from '../ui/DisplayImage';
 import PhotoPicker from '../ui/PhotoPicker';
 import SplitQuantityModal from '../ui/SplitQuantityModal';
+import CrateHistory from '../ui/CrateHistory';
 import MergeDuplicatesModal, { findDuplicates } from '../ui/MergeDuplicatesModal';
 
 function QuantityInput({ value, onCommit }) {
@@ -242,11 +243,16 @@ const ObjectDetail = ({
                   Caisse
                 </span>
                 <input
+                  key={`crate-${object.id}-${object.crate}`}
                   type="number"
-                  value={object.crate || 0}
-                  onChange={(e) => {
+                  inputMode="numeric"
+                  defaultValue={object.crate || 0}
+                  onFocus={(e) => e.target.select()}
+                  onKeyDown={(e) => e.key === 'Enter' && e.target.blur()}
+                  onBlur={(e) => {
                     const newCrate = parseInt(e.target.value) || 0;
-                    onUpdate(object.id, { crate: newCrate });
+                    if (newCrate !== (object.crate || 0))
+                      onUpdate(object.id, { crate: newCrate });
                   }}
                   className="w-24 py-2 bg-blue-50 text-blue-700 border-2 border-blue-100 rounded-xl text-center font-black text-lg outline-none"
                 />
@@ -389,6 +395,10 @@ const ObjectDetail = ({
               </div>
             </div>
           </div>
+
+          {!isGuest && (
+            <CrateHistory objectId={object.id} refreshKey={object.crate} />
+          )}
 
           <div className="grid grid-cols-1 gap-3">
             {isAdmin && (

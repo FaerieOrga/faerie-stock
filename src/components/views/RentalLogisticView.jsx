@@ -42,15 +42,47 @@ const RentalLogisticsView = ({
     (req) => req.status === 'returned' || req.status === 'rejected'
   );
 
+  const [returnMode, setReturnMode] = useState('location'); // 'location' | 'source' | 'other'
+
+  const currentCrateOf = (item) =>
+    objects.find((o) => Number(o.id) === Number(item.object_id))?.crate ?? '';
+  const hasSource = (item) =>
+    item.source_crate !== null && item.source_crate !== undefined;
+
+  // Caisses proposées au retour selon le mode choisi
+  const assignmentsFor = (req, mode, otherCrate = '') => {
+    const result = {};
+    req.rental_items?.forEach((item) => {
+      if (mode === 'source' && hasSource(item)) {
+        result[item.object_id] = String(item.source_crate);
+      } else if (mode === 'other') {
+        result[item.object_id] = otherCrate;
+      } else {
+        result[item.object_id] = String(currentCrateOf(item));
+      }
+    });
+    return result;
+  };
+
   const handleOpenProcess = (req) => {
     setSelectedRequestId(req.id);
     setGlobalCrate('');
+    if (activeTab === 'active') {
+      const mode = req.rental_items?.some(hasSource) ? 'source' : 'location';
+      setReturnMode(mode);
+      setItemAssignments(assignmentsFor(req, mode));
+      return;
+    }
     const initialAssignments = {};
     req.rental_items?.forEach((item) => {
-      const obj = objects.find((o) => Number(o.id) === Number(item.object_id));
-      initialAssignments[item.object_id] = obj?.crate || '';
+      initialAssignments[item.object_id] = currentCrateOf(item) || '';
     });
     setItemAssignments(initialAssignments);
+  };
+
+  const chooseReturnMode = (req, mode) => {
+    setReturnMode(mode);
+    setItemAssignments(assignmentsFor(req, mode, globalCrate));
   };
 
   const applyGlobalCrate = (value) => {
@@ -359,6 +391,64 @@ const RentalLogisticsView = ({
 
                 {isSelected && (
                   <div className="border-t border-slate-50 bg-slate-50/50 p-8 animate-in slide-in-from-top-4">
+                    {/* CHOIX DE LA CAISSE DE RETOUR (onglet Retours) */}
+                    {activeTab === 'active' && (
+                      <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-3xl text-left">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-700 mb-3">
+                          Où ranger le matériel rendu ?
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          {[
+                            ['location', 'Laisser dans la caisse de location'],
+                            ['source', "Retour à la caisse d'origine"],
+                            ['other', 'Autre caisse'],
+                          ].map(([mode, label]) => {
+                            const disabled =
+                              mode === 'source' &&
+                              !req.rental_items?.some(hasSource);
+                            return (
+                              <button
+                                key={mode}
+                                disabled={disabled}
+                                onClick={() => chooseReturnMode(req, mode)}
+                                title={
+                                  disabled
+                                    ? "Caisse d'origine inconnue pour cette location (validée avant la mise en place de l'historique)"
+                                    : ''
+                                }
+                                className={`px-3 py-3 rounded-2xl text-xs font-black transition-all ${
+                                  returnMode === mode
+                                    ? 'bg-amber-500 text-white shadow-md'
+                                    : 'bg-white text-slate-600 border border-amber-100 hover:border-amber-300'
+                                } disabled:opacity-40 disabled:cursor-not-allowed`}
+                              >
+                                {label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {returnMode === 'other' && (
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            placeholder="N° de caisse pour tout le matériel"
+                            value={globalCrate}
+                            onChange={(e) => {
+                              setGlobalCrate(e.target.value);
+                              setItemAssignments(
+                                assignmentsFor(req, 'other', e.target.value)
+                              );
+                            }}
+                            className="mt-3 w-full p-3 rounded-2xl bg-white border border-amber-200 font-black text-center outline-none focus:ring-2 focus:ring-amber-500"
+                          />
+                        )}
+                        <p className="mt-3 text-[11px] text-amber-700/80">
+                          Chaque caisse reste modifiable ligne par ligne
+                          ci-dessous.
+                        </p>
+                      </div>
+                    )}
+
                     {/* SECTION AFFECTATION GLOBALE (Seulement pour Départ) */}
                     {activeTab === 'pending' && (
                       <div className="mb-8 p-4 bg-blue-600 rounded-3xl shadow-xl shadow-blue-200 flex flex-col md:flex-row items-center justify-between gap-4">
@@ -435,6 +525,10 @@ const RentalLogisticsView = ({
                                 </p>
                                 <p className="text-[10px] text-slate-400 font-bold uppercase">
                                   Caisse actuelle: {obj?.crate || '??'}
+                                  {activeTab !== 'pending' &&
+                                    (hasSource(item)
+                                      ? ` · origine : ${item.source_crate}`
+                                      : ' · origine inconnue')}
                                 </p>
                               </div>
                             </div>
