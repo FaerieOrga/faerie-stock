@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { RefreshCw, Eye, Mail, Lock } from 'lucide-react';
+import React, { useState } from "react";
+import { RefreshCw, Eye, Mail, Lock, ArrowLeft, KeyRound } from "lucide-react";
 
 const LoginForm = ({ onLogin, onGuestLogin, loading }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showLogin, setShowLogin] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -25,62 +26,89 @@ const LoginForm = ({ onLogin, onGuestLogin, loading }) => {
         <h1 className="text-3xl font-bold text-slate-800 mb-2">
           Application Faérie
         </h1>
-        <p className="text-slate-500 mb-8">Accès sécurisé à la gestion</p>
+        {!showLogin ? (
+          <>
+            <p className="text-slate-500 mb-8">
+              Consultez le matériel et faites une demande de location.
+            </p>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Champ Email */}
-          <div className="text-left">
-            <label className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase mb-1 ml-1">
-              <Mail size={14} /> Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="votre@email.com"
-              className="w-full px-4 py-3 border-2 border-slate-100 rounded-xl focus:outline-none focus:border-blue-500 transition-all focus:ring-4 focus:ring-blue-50"
-              required
-            />
-          </div>
+            {/* Mode invité : action principale */}
+            <button
+              onClick={onGuestLogin}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-200 transition-all active:scale-95 flex items-center justify-center gap-2"
+            >
+              <Eye size={20} /> Entrer en mode Invité
+            </button>
 
-          {/* Champ Mot de passe */}
-          <div className="text-left">
-            <label className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase mb-1 ml-1">
-              <Lock size={14} /> Mot de passe
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full px-4 py-3 border-2 border-slate-100 rounded-xl focus:outline-none focus:border-blue-500 transition-all focus:ring-4 focus:ring-blue-50"
-              required
-            />
-          </div>
+            {/* Accès membre : discret */}
+            <div className="mt-8 border-t border-slate-100 pt-6">
+              <button
+                onClick={() => setShowLogin(true)}
+                className="flex items-center justify-center gap-2 w-full text-slate-400 hover:text-blue-600 text-sm font-semibold transition-colors"
+              >
+                <KeyRound size={16} /> Espace membre
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="text-slate-500 mb-8">Accès sécurisé à la gestion</p>
 
-          {/* Bouton de soumission */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-200 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-          >
-            {loading ? (
-              <RefreshCw className="animate-spin" size={24} />
-            ) : (
-              'Se connecter'
-            )}
-          </button>
-        </form>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Champ Email */}
+              <div className="text-left">
+                <label className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase mb-1 ml-1">
+                  <Mail size={14} /> Email
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="votre@email.com"
+                  className="w-full px-4 py-3 border-2 border-slate-100 rounded-xl focus:outline-none focus:border-blue-500 transition-all focus:ring-4 focus:ring-blue-50"
+                  required
+                />
+              </div>
 
-        {/* Option Invité */}
-        <div className="mt-8 border-t border-slate-100 pt-6">
-          <button
-            onClick={onGuestLogin}
-            className="flex items-center justify-center gap-2 w-full text-slate-400 hover:text-blue-600 font-semibold transition-colors"
-          >
-            <Eye size={18} /> Entrer en mode Invité
-          </button>
-        </div>
+              {/* Champ Mot de passe */}
+              <div className="text-left">
+                <label className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase mb-1 ml-1">
+                  <Lock size={14} /> Mot de passe
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-3 border-2 border-slate-100 rounded-xl focus:outline-none focus:border-blue-500 transition-all focus:ring-4 focus:ring-blue-50"
+                  required
+                />
+              </div>
+
+              {/* Bouton de soumission */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-200 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {loading ? (
+                  <RefreshCw className="animate-spin" size={24} />
+                ) : (
+                  "Se connecter"
+                )}
+              </button>
+            </form>
+
+            <div className="mt-8 border-t border-slate-100 pt-6">
+              <button
+                onClick={() => setShowLogin(false)}
+                className="flex items-center justify-center gap-2 w-full text-slate-400 hover:text-blue-600 text-sm font-semibold transition-colors"
+              >
+                <ArrowLeft size={16} /> Retour
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
