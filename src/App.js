@@ -478,6 +478,9 @@ export default function App() {
             onBack={handleGoBack}
             onUpdate={updateObject}
             onUploadImage={uploadImage}
+            rentals={rentalRequests}
+            objects={objects}
+            onRefresh={fetchData}
             onOpenQR={(e, t, id, l) =>
               setQrData({ show: true, type: t, id, label: l })
             }

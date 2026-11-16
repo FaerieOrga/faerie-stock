@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import DisplayImage from '../ui/DisplayImage';
 import PhotoPicker from '../ui/PhotoPicker';
+import SplitQuantityModal from '../ui/SplitQuantityModal';
+import MergeDuplicatesModal, { findDuplicates } from '../ui/MergeDuplicatesModal';
 
 function QuantityInput({ value, onCommit }) {
   const [text, setText] = React.useState(String(value ?? 0));
@@ -53,7 +55,13 @@ const ObjectDetail = ({
   isAdmin,
   uploading,
   warehouses = [],
+  rentals = [],
+  objects = [],
+  onRefresh,
 }) => {
+  const [showSplit, setShowSplit] = React.useState(false);
+  const [showMerge, setShowMerge] = React.useState(false);
+  const duplicates = object ? findDuplicates(object, objects) : [];
   if (!object) return null;
 
   const [localNotes, setLocalNotes] = React.useState(object.notes || '');
@@ -276,10 +284,30 @@ const ObjectDetail = ({
                 <span className="text-slate-400 font-bold uppercase text-xs">
                   Quantité
                 </span>
-                <QuantityInput
-                  value={object.quantity}
-                  onCommit={(q) => onUpdate(object.id, { quantity: q })}
-                />
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  {!isGuest && duplicates.length > 0 && (
+                    <button
+                      onClick={() => setShowMerge(true)}
+                      className="px-3 py-2 bg-amber-50 text-amber-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-100"
+                      title={`${duplicates.length} autre(s) fiche(s) identique(s)`}
+                    >
+                      Regrouper ({duplicates.length})
+                    </button>
+                  )}
+                  {!isGuest && object.quantity > 1 && (
+                    <button
+                      onClick={() => setShowSplit(true)}
+                      className="px-3 py-2 bg-blue-50 text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-100"
+                      title="Répartir la quantité sur plusieurs caisses"
+                    >
+                      Répartir
+                    </button>
+                  )}
+                  <QuantityInput
+                    value={object.quantity}
+                    onCommit={(q) => onUpdate(object.id, { quantity: q })}
+                  />
+                </div>
               </div>
 
               <div className="flex items-center justify-between px-2">
@@ -377,6 +405,22 @@ const ObjectDetail = ({
           </div>
         </div>
       </div>
+      {showMerge && (
+        <MergeDuplicatesModal
+          object={object}
+          duplicates={duplicates}
+          onClose={() => setShowMerge(false)}
+          onDone={onRefresh}
+        />
+      )}
+      {showSplit && (
+        <SplitQuantityModal
+          object={object}
+          rentals={rentals}
+          onClose={() => setShowSplit(false)}
+          onDone={onRefresh}
+        />
+      )}
     </div>
   );
 };
